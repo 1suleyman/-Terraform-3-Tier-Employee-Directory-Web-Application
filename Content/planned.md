@@ -26,8 +26,6 @@ Each module contains:
 * **Name resources using project + environment**
   *Why:* Makes them easy to identify in the AWS Console (e.g., `tfstate-employee-directory-dev`).
 
----
-
 **Variables**
 
 * `state_bucket_name` — Name of S3 bucket for storing Terraform state.
@@ -35,16 +33,12 @@ Each module contains:
 * `aws_region` — Region where bucket and table will be created.
 * `tags` — Default tags to apply to both resources.
 
----
-
 **Docs to Read (Why)**
 
 * **aws\_s3\_bucket** – Learn syntax for creating S3 buckets in Terraform.
 * **aws\_s3\_bucket\_versioning** – Enable versioning for rollback safety.
 * **aws\_dynamodb\_table** – Create the table Terraform uses for locking.
 * **terraform backend s3** – Configure Terraform to use the bucket/table automatically.
-
----
 
 **AI Prompt Template**
 
