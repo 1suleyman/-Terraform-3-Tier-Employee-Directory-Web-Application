@@ -1,7 +1,7 @@
 # 🧑‍💻 Terraform 3-Tier Employee Directory Web Application
 
 Welcome to my **Terraform-powered AWS lab project**!
-This repository documents my **step-by-step journey** building a **3-Tier Employee Directory Web Application** on AWS — with every resource fully **provisioned using Infrastructure as Code**.
+This repository documents my **step-by-step journey** building a **3-Tier Employee Directory Web Application** on AWS — with every resource fully provisioned using Infrastructure as Code.
 
 ---
 
@@ -15,13 +15,14 @@ Instead of manually clicking through the AWS Console, this project uses **`.tf` 
 * Test
 * Tear down
 * Re-deploy
-  …in a **repeatable and version-controlled** way.
+
+…in a **repeatable** and **version-controlled** way.
 
 ---
 
 ## 🎯 Objective
 
-**Build a secure, scalable, and highly available Employee Directory web application** — fully managed by Terraform.
+Build a **secure**, **scalable**, and **highly available** Employee Directory web application — fully managed by Terraform.
 
 ---
 
@@ -40,7 +41,7 @@ Instead of manually clicking through the AWS Console, this project uses **`.tf` 
 
 ## 🗂️ Module Overview
 
-This Terraform project is divided into **6 modules**, each one mapped to a core AWS concept:
+This Terraform project is divided into **6 modules**, each mapped to a core AWS concept:
 
 1. **IAM** — Users, groups, roles, MFA
 2. **EC2** — Hosting the application on a virtual server
@@ -49,7 +50,7 @@ This Terraform project is divided into **6 modules**, each one mapped to a core 
 5. **DynamoDB** — Persistent data storage for the app
 6. **Monitoring & Scaling** — Load balancing and auto scaling
 
-Each module has:
+Each module includes:
 
 * `main.tf` – Core resource definitions
 * `variables.tf` – Configurable inputs
@@ -58,162 +59,294 @@ Each module has:
 
 ---
 
-## 🚀 Module 1: IAM Setup in Terraform
+# 📋 Portfolio Build Checklist
 
-**Goals:**
+This checklist blends **technical decisions**, **variables to define**, and **Terraform Registry research targets**.
+Use it as a **scavenger hunt**:
 
-* Enable secure account access
-* Manage permissions through code
-
-**Terraform Tasks:**
-
-* Define IAM users (`aws_iam_user`)
-* Define IAM groups and attach managed policies (`aws_iam_group` + `aws_iam_group_policy_attachment`)
-* Create IAM roles (`aws_iam_role`) for EC2 with S3 + DynamoDB access
-* Use `aws_iam_instance_profile` to attach roles to EC2
-
-**Verification:**
-
-```bash
-terraform apply
-aws iam list-users
-aws iam list-roles
-```
+1. Create the variables
+2. Search the AWS provider docs for the resource/data source
+3. Implement in Terraform
+4. Validate via AWS CLI/Console
 
 ---
 
-## 🚀 Module 2: EC2 Deployment via Terraform
+## 🌍 Global Project Setup
 
-**Goals:**
+**Decisions**
 
-* Launch the Employee Directory app on EC2 with IAM role and security groups
+* Naming convention: `employee-<env>-<component>`
+* Environments: `dev`, `prod` (workspaces or folders)
+* Remote state: S3 backend + DynamoDB locking
+* Tagging standard: `Project`, `Environment`, `Owner`, `CostCenter`
 
-**Terraform Tasks:**
+**Variables**
 
-* Define security group (`aws_security_group`) allowing HTTP/HTTPS
-* Provision EC2 instance (`aws_instance`) with `user_data` startup script
-* Attach IAM instance profile for app to use S3/DynamoDB
-* Output public IP from Terraform
+* `aws_region`
+* `project_name`
+* `environment`
+* `tags` (map)
 
-**Verification:**
+**Docs to read**
 
-```bash
-terraform output ec2_public_ip
-curl http://<PUBLIC_IP>
-```
+* `aws provider`
+* `terraform backend s3`
+* `terraform state locking dynamodb`
+* `terraform workspaces`
+* `terraform input variables / outputs / locals`
 
----
+**Validate**
 
-## 🌐 Module 3: VPC & Networking via Terraform
-
-**Goals:**
-
-* Create custom network layout with public and private subnets
-
-**Terraform Tasks:**
-
-* Create custom VPC (`aws_vpc`)
-* Create public and private subnets (`aws_subnet`)
-* Attach Internet Gateway (`aws_internet_gateway`)
-* Create route tables and associations (`aws_route_table`, `aws_route_table_association`)
-
-**Verification:**
-
-```bash
-aws ec2 describe-vpcs
-aws ec2 describe-subnets
-```
+* `terraform init` with backend works; state file in S3; lock table in DynamoDB.
 
 ---
 
-## 💾 Module 4: S3 Storage via Terraform
+## 🔐 Module 1 — IAM
 
-**Goals:**
+**Decisions**
 
-* Store profile photos in a secure S3 bucket
+* Users: `AdminUser`, `DevUser`
+* Group: `EC2Admins` (start broad, later least-privilege)
+* EC2 role: `EmployeeWebAppRole`
+* Start with AWS managed policies for S3 + DynamoDB
 
-**Terraform Tasks:**
+**Variables**
 
-* Create private S3 bucket (`aws_s3_bucket`)
-* Add bucket policy (`aws_s3_bucket_policy`) to allow access only via IAM role
-* Set bucket name in `user_data` environment variable
+* `admin_user_name`
+* `dev_user_name`
+* `iam_group_name`
+* `ec2_role_name`
+* `managed_policy_arns` (list, optional)
 
-**Verification:**
+**Docs to read**
 
-```bash
-aws s3 ls s3://<BUCKET_NAME>
-```
+* `aws_iam_user`
+* `aws_iam_group`
+* `aws_iam_group_policy_attachment`
+* `aws_iam_role` (assume role policy)
+* `aws_iam_instance_profile`
 
----
+**Validate**
 
-## 🗄️ Module 5: DynamoDB Database via Terraform
-
-**Goals:**
-
-* Persist employee data in NoSQL database
-
-**Terraform Tasks:**
-
-* Create DynamoDB table (`aws_dynamodb_table`)
-* Update EC2 app configuration via `user_data` to point to table
-* Test CRUD operations via app UI
-
-**Verification:**
-
-```bash
-aws dynamodb scan --table-name Employees
-```
+* `aws iam list-users`
+* `aws iam list-roles`
+* Role trust principal = `ec2.amazonaws.com`.
 
 ---
 
-## 📈 Module 6: Monitoring, Load Balancing & Auto Scaling via Terraform
+## 🌐 Module 2 — EC2
 
-**Goals:**
+**Decisions**
 
-* Ensure high availability and scale under load
+* AMI (Amazon Linux 2023)
+* Instance type (`t2.micro`)
+* User data script path
+* Security group: HTTP/HTTPS only
+* Attach instance profile from IAM module
 
-**Terraform Tasks:**
+**Variables**
 
-* Create Application Load Balancer (`aws_lb`) with target group (`aws_lb_target_group`)
-* Create Launch Template (`aws_launch_template`)
-* Create Auto Scaling Group (`aws_autoscaling_group`) linked to ALB
-* Add scaling policies (`aws_autoscaling_policy`)
+* `instance_name`
+* `instance_type`
+* `ami_id` or `data aws_ami` lookup
+* `user_data_path`
+* `web_ingress_cidrs` (list)
+* `vpc_id`, `subnet_id`
 
-**Verification:**
+**Docs to read**
 
-```bash
-ab -n 1000 -c 50 http://<ALB_DNS>
-aws autoscaling describe-auto-scaling-groups
-```
+* `aws_instance`
+* `aws_security_group`
+* `data aws_ami`
+* `user_data vs user_data_replace_on_change`
 
----
+**Validate**
 
-## 🔗 Terraform Workflow
-
-For each module:
-
-```bash
-terraform init
-terraform plan
-terraform apply
-terraform destroy   # Optional for cleanup
-```
+* `terraform output ec2_public_ip`
+* `curl http://<public-ip>` loads app.
 
 ---
 
-## 🧠 What I Learned
+## 🏗️ Module 3 — VPC & Networking
 
-This project reinforced:
+**Decisions**
 
-* Writing clean and reusable Terraform code
-* Structuring multi-module IaC projects
-* Managing state files (S3 backend + DynamoDB locking)
-* Deploying full AWS stacks from scratch without console clicks
-* Scaling apps automatically with ALB + ASG
+* VPC CIDR: `10.1.0.0/16`
+* 2 AZs (`eu-west-2a`, `eu-west-2b`)
+* Public subnets: `10.1.1.0/24`, `10.1.3.0/24`
+* Private subnets: `10.1.2.0/24`, `10.1.4.0/24`
+
+**Variables**
+
+* `vpc_cidr`
+* `azs` (list)
+* `public_subnet_cidrs`
+* `private_subnet_cidrs`
+* `enable_nat_gateway` (optional)
+
+**Docs to read**
+
+* `aws_vpc`
+* `aws_subnet`
+* `aws_internet_gateway`
+* `aws_route_table` / `aws_route_table_association`
+
+**Validate**
+
+* Public subnets map public IPs; internet access works.
 
 ---
 
-## 📮 Feedback
+## 🪣 Module 4 — S3
 
-Have Terraform tips, questions, or ideas for collaboration?
-Open an issue or reach out 🚀
+**Decisions**
+
+* Unique bucket name
+* Block public access
+* Bucket policy: allow only EC2 role to Put/Get
+
+**Variables**
+
+* `photos_bucket_name`
+* `bucket_force_destroy`
+
+**Docs to read**
+
+* `aws_s3_bucket`
+* `aws_s3_bucket_policy`
+* `aws_s3_bucket_public_access_block`
+
+**Validate**
+
+* App upload works; bucket private.
+
+---
+
+## 📄 Module 5 — DynamoDB
+
+**Decisions**
+
+* Table name: `Employees`
+* Partition key: `id` (String)
+* Billing mode: `PAY_PER_REQUEST`
+
+**Variables**
+
+* `ddb_table_name`
+* `ddb_hash_key`
+* `ddb_billing_mode`
+
+**Docs to read**
+
+* `aws_dynamodb_table`
+* `aws_iam_policy` (least-privilege CRUD)
+
+**Validate**
+
+* Employee added → record in DynamoDB.
+
+---
+
+## ⚖️ Module 6 — ALB + Auto Scaling
+
+**Decisions**
+
+* ALB: internet-facing, 2 subnets
+* Target group: HTTP, health check `/`
+* Launch template for EC2
+* ASG desired/min/max: `2/2/4`
+* Scaling policy: target CPU 60%
+
+**Variables**
+
+* `alb_name`
+* `target_group_name`
+* `health_check_path`
+* `launch_template_name`
+* `asg_desired`, `asg_min`, `asg_max`
+* `cpu_target_utilization`
+
+**Docs to read**
+
+* `aws_lb`
+* `aws_lb_target_group`
+* `aws_launch_template`
+* `aws_autoscaling_group`
+* `aws_autoscaling_policy`
+
+**Validate**
+
+* ALB DNS works; ASG scales under load.
+
+---
+
+## 📦 App Config (User Data / Env)
+
+**Decisions**
+
+* Env vars: `PHOTOS_BUCKET`, `AWS_DEFAULT_REGION`, `DYNAMO_MODE`
+* Store script in `scripts/` folder
+
+**Variables**
+
+* `app_env` (map)
+* `user_data_path`
+
+**Docs to read**
+
+* `terraform templatefile`
+* `aws_instance user_data`
+* `aws_launch_template user_data`
+
+**Validate**
+
+* `printenv` shows expected vars in instance.
+
+---
+
+## 🧠 State, Environments, Quality
+
+**Decisions**
+
+* State bucket/key per env
+* Lock table name
+* Workspaces vs per-env folders
+* Formatting & validation before apply
+
+**Variables**
+
+* `state_bucket`, `state_key`, `state_dynamodb_table`
+* `owner`, `cost_center`
+
+**Docs to read**
+
+* `backend "s3"`
+* `terraform workspaces`
+* `terraform fmt` / `terraform validate`
+
+**Validate**
+
+* Separate state for dev/prod; fmt/validate pass.
+
+---
+
+## 🏷️ Tagging & Naming
+
+**Decisions**
+
+* Consistent `default_tags`
+* Name prefix pattern
+
+**Variables**
+
+* `name_prefix`
+* `default_tags` (map)
+
+**Docs to read**
+
+* `provider "aws" default_tags`
+* `terraform locals`
+
+**Validate**
+
+* All resources tagged consistently.
