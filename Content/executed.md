@@ -19,18 +19,16 @@ Think of this as a **behind-the-scenes build journal** that tracks not just what
 
 ## 📋 Execution Modules
 
-* 🚀 [**Module 1:** IAM Setup (Users, Groups, Roles, Policies, MFA)](#module-1-iam-setup) – [Planned.md → IAM Section](Planned.md#-module-1--iam)
-* 🚀 [**Module 2:** Launching the App on EC2 (Networking, User Data, Web Server)](#module-2-launching-the-app-on-ec2) – [Planned.md → EC2 Section](Planned.md#-module-2--ec2)
-* 🌐 [**Module 3:** Custom VPC with Subnets, Route Tables, and Re-deployment](#module-3-custom-vpc--re-deployment) – [Planned.md → VPC Section](Planned.md#-module-3--vpc--networking)
-* 💾 [**Module 4:** S3 Bucket for Profile Photos + IAM Policy Integration](#module-4-s3-integration) – [Planned.md → S3 Section](Planned.md#-module-4--s3)
-* 🗄️ [**Module 5:** DynamoDB Table Setup + Full CRUD Test via App UI](#module-5-dynamodb-integration) – [Planned.md → DynamoDB Section](Planned.md#-module-5--dynamodb)
-* 📈 [**Module 6:** Load Balancing and EC2 Auto Scaling Configuration + Stress Test](#module-6-load-balancer--auto-scaling) – [Planned.md → ALB + Auto Scaling Section](Planned.md#-module-6--alb--auto-scaling)
+* 🚀 **Module 1:** IAM Setup (Users, Groups, Roles, Policies, MFA)
+* 🚀 **Module 2:** Launching the App on EC2 (Networking, User Data, Web Server)
+* 🌐 **Module 3:** Custom VPC with Subnets, Route Tables, and Re-deployment
+* 💾 **Module 4:** S3 Bucket for Profile Photos + IAM Policy Integration
+* 🗄️ **Module 5:** DynamoDB Table Setup + Full CRUD Test via App UI
+* 📈 **Module 6:** Load Balancing and EC2 Auto Scaling Configuration + Stress Test
 
 ---
 
 ## 🚀 Module 1: IAM Setup
-
-[**Planned.md Reference → IAM Section**](Planned.md#-module-1--iam)
 
 **Goal:** Create IAM roles, users, and groups entirely via Terraform.
 
@@ -49,11 +47,11 @@ Think of this as a **behind-the-scenes build journal** that tracks not just what
 **terraform plan → apply output:**
 
 ```bash
-# Paste relevant output
+# Paste the relevant part of Terraform plan/apply here
 ```
 
 **AWS Console Screenshot:**
-`[Insert screenshot]`
+`[Insert screenshot of IAM roles/users/groups]`
 
 **Validation Steps:**
 
@@ -63,13 +61,11 @@ Think of this as a **behind-the-scenes build journal** that tracks not just what
 
 **Issues & Fixes:**
 
-* *Example:* Updated assume role policy JSON to match AWS policy syntax.
+* *Example:* Had to update `assume_role_policy` JSON to match AWS policy syntax.
 
 ---
 
 ## 🚀 Module 2: Launching the App on EC2
-
-[**Planned.md Reference → EC2 Section**](Planned.md#-module-2--ec2)
 
 **Goal:** Deploy EC2 instance with user data to run Flask app.
 
@@ -88,26 +84,24 @@ Think of this as a **behind-the-scenes build journal** that tracks not just what
 **terraform plan → apply output:**
 
 ```bash
-# Paste relevant output
+# Paste relevant CLI output here
 ```
 
 **AWS Console Screenshot:**
-`[Insert screenshot]`
+`[Insert screenshot of EC2 instance detail page]`
 
 **Validation Steps:**
 
 * [ ] `terraform output ec2_public_ip` returns live IP
-* [ ] `curl http://<PUBLIC_IP>` loads app
+* [ ] `curl http://<PUBLIC_IP>` loads the app
 
 **Issues & Fixes:**
 
-* *Example:* Added `yum update -y` to user\_data to fix dependency errors.
+* *Example:* Initial user data failed due to missing `yum update -y` in script.
 
 ---
 
 ## 🌐 Module 3: Custom VPC & Re-deployment
-
-[**Planned.md Reference → VPC Section**](Planned.md#-module-3--vpc--networking)
 
 **Goal:** Move infrastructure into a custom VPC with public/private subnets.
 
@@ -120,23 +114,21 @@ Think of this as a **behind-the-scenes build journal** that tracks not just what
 **Code Implemented (.tf snippet):**
 
 ```hcl
-# Paste VPC, subnets, route tables here
+# Paste VPC + subnet + route table code here
 ```
 
 **Validation Steps:**
 
-* [ ] `aws ec2 describe-vpcs` shows correct CIDR
+* [ ] `aws ec2 describe-vpcs` shows VPC `app-vpc` with correct CIDR
 * [ ] Public subnets have `map_public_ip_on_launch = true`
 
 **Issues & Fixes:**
 
-* *Example:* Forgot to associate route table with public subnets initially.
+* *Example:* Forgot to associate route table with public subnets.
 
 ---
 
 ## 💾 Module 4: S3 Integration
-
-[**Planned.md Reference → S3 Section**](Planned.md#-module-4--s3)
 
 **Goal:** Create private S3 bucket and grant EC2 role access.
 
@@ -154,18 +146,16 @@ Think of this as a **behind-the-scenes build journal** that tracks not just what
 
 **Validation Steps:**
 
-* [ ] Upload from app works
-* [ ] Bucket private in AWS Console
+* [ ] Upload works from app → image stored in S3
+* [ ] Bucket is private in AWS Console
 
 **Issues & Fixes:**
 
-* *Example:* Adjusted policy Principal ARN for correct role reference.
+* *Example:* Had to fix bucket policy principal ARN.
 
 ---
 
 ## 🗄️ Module 5: DynamoDB Integration
-
-[**Planned.md Reference → DynamoDB Section**](Planned.md#-module-5--dynamodb)
 
 **Goal:** Store employee records in DynamoDB.
 
@@ -178,23 +168,21 @@ Think of this as a **behind-the-scenes build journal** that tracks not just what
 **Code Implemented (.tf snippet):**
 
 ```hcl
-# Paste DynamoDB + permissions here
+# Paste DynamoDB + permissions code here
 ```
 
 **Validation Steps:**
 
-* [ ] App UI adds record to DynamoDB
+* [ ] Adding employee in UI stores record in DynamoDB
 * [ ] S3 + DynamoDB integration works end-to-end
 
 **Issues & Fixes:**
 
-* *Example:* Needed to update EC2 environment variables for table name.
+* *Example:* Needed to re-run EC2 with updated environment variables.
 
 ---
 
 ## 📈 Module 6: Load Balancer & Auto Scaling
-
-[**Planned.md Reference → ALB + Auto Scaling Section**](Planned.md#-module-6--alb--auto-scaling)
 
 **Goal:** Add high availability and scaling.
 
@@ -213,20 +201,18 @@ Think of this as a **behind-the-scenes build journal** that tracks not just what
 **Validation Steps:**
 
 * [ ] ALB DNS routes traffic to healthy targets
-* [ ] ASG scales up under load
+* [ ] ASG scales up under load test
 
 **Issues & Fixes:**
 
-* *Example:* Corrected scaling policy to target right group ARN.
+* *Example:* Scaling policy initially used wrong target group ARN.
 
 ---
 
 ## 🔍 Why Document Execution?
 
-By linking each **Executed.md** section to its **Planned.md** counterpart, this repo shows the **full cycle**:
+Writing this log was part of my **learn-by-building** approach.
+I didn’t just read Terraform docs — I **coded, deployed, tested, broke things, fixed them**, and learned why each resource mattered.
 
-* 📄 Plan & AI prompt (design decisions + variable structure)
-* 💻 Terraform code (customized from AI boilerplate)
-* 🧪 Deployment & validation (CLI + console proof)
-* 🛠️ Fixes (what went wrong and how I solved it)
+If you’re learning Terraform, prepping for the **Terraform Associate** exam, or building similar AWS stacks — this execution log is for you.
 
