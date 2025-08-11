@@ -1,277 +1,299 @@
-# 📋 Planned Terraform 3-Tier Employee Directory Web Application
+# 📋 Planned — Terraform 3-Tier Employee Directory Web Application
 
-This is my **blueprint** for building a Terraform-powered AWS 3-Tier Employee Directory Application.
+This is my **blueprint** for building a Terraform-powered AWS 3-Tier Employee Directory App.
+Each module contains:
 
-It contains:
-
-1. **Architecture & Decisions** – What I want to build and *why it matters*.
-2. **Variables to Define** – So configs are reusable.
-3. **Docs to Read** – Where to find syntax and best practices.
-4. **AI Prompt Templates** – To quickly generate boilerplate code and focus on customizing.
+* **Decisions** — What I’m building and *why* (with analogies to make it stick).
+* **Variables** — What values I’ll define so configs are reusable.
+* **Docs to Read** — Where to learn syntax and details.
+* **AI Prompt Template** — Ready to paste into AI to get boilerplate code.
 
 ---
 
-## 🌍 Global Project Setup
+## 🛠️ Module 0 — Local Prerequisites
 
-**Decisions**
+### Decisions
+
+* **Create S3 bucket for remote state** (e.g., `tf-state-employee-directory`)
+  *Why:* Think of this as a **shared project diary**. It stores Terraform’s “memory” so you (and teammates) don’t forget what’s already built.
+* **Create DynamoDB table for state locking** (e.g., `tf-state-locks`)
+  *Why:* This is like a **"Room in Use" sign**. It stops two people from changing the project at the same time and breaking things.
+
+### Variables
+
+bucket
+dynamodb\_table
+
+### Docs to Read (Why)
+
+* **AWS S3 CLI** – How to create the storage for your Terraform “memory”.
+* **AWS DynamoDB CLI** – How to set up the “Room in Use” sign.
+
+### AI Prompt Template
+
+> Generate AWS CLI commands to create an S3 bucket named \${bucket} in region \${aws\_region} with versioning enabled, and a DynamoDB table named \${dynamodb\_table} with "LockID" as the primary key for Terraform state locking.
+
+---
+
+## 🌍 Module 1 — Global Project Setup
+
+### Decisions
 
 * **Naming convention:** `employee-<env>-<component>`
-  *Why:* Keeps resources clearly grouped. Like labeling all moving boxes so you know exactly where they go.
+  *Why:* Like labeling moving boxes — you instantly know where each thing belongs.
 * **Environments:** `dev`, `prod` (via workspaces or separate folders)
-  *Why:* Safe testing before production. Like practicing on a spare car before driving your main one.
+  *Why:* Test things in a **sandbox** before touching the real thing.
 * **Remote state:** S3 backend + DynamoDB locking
-  *Why:* Shared state prevents conflicts. DynamoDB lock is the “Do Not Disturb” sign for Terraform.
+  *Why:* S3 is the **filing cabinet** for Terraform’s memory. DynamoDB is the **“Do Not Disturb” sign** so only one change happens at a time.
 * **Tagging standard:** `Project`, `Environment`, `Owner`, `CostCenter`
-  *Why:* Easier cost tracking, searches, and cleanup. Tags are AWS’s sticky notes.
+  *Why:* Like sticky notes on your stuff — makes it easy to find, track costs, and clean up.
 
-**Variables**
+### Variables
 
-* aws_region
-* project_name
-* environment
-* tags (map)
+aws\_region
+project\_name
+environment
+tags (map)
 
-**Docs to Read (Why)**
+### Docs to Read (Why)
 
-* **aws provider** – Terraform needs to know which cloud and region to talk to.
-* **terraform backend s3** – Save Terraform state in S3.
-* **terraform state locking dynamodb** – Avoids overwriting state in team setups.
-* **terraform workspaces** – Multiple environments from one codebase.
-* **terraform variables, outputs, locals** – Flexible and reusable configs.
+* **aws provider** – Tells Terraform which cloud and region to use.
+* **terraform backend s3** – Stores Terraform’s memory in S3.
+* **terraform state locking dynamodb** – Stops accidental simultaneous edits.
+* **terraform workspaces** – Switch between dev/prod without rewriting code.
+* **terraform variables / outputs / locals** – Keep code clean and reusable.
 
-**AI Prompt Template**
+### AI Prompt Template
 
-> Generate Terraform configuration to set up the AWS provider in region ${var.aws_region}, 
-  with default tags ${var.tags}, and configure a remote S3 backend with DynamoDB state locking. 
-  Include variables for project_name, environment, and aws_region.
+> Generate Terraform configuration to set up the AWS provider in region \${var.aws\_region}, with default tags \${var.tags}, and configure a remote S3 backend with DynamoDB state locking. Include variables for project\_name, environment, and aws\_region.
 
 ---
 
-## 🔐 Module 1 — IAM
+## 🔐 Module 2 — IAM
 
-**Decisions**
+### Decisions
 
-* **Users:** `AdminUser`, `DevUser`
-  *Why:* Separate identities for different roles. Like having a master key and a guest key.
-* **Group:** `EC2Admins`
-  *Why:* Assign permissions once to the group instead of each user.
-* **EC2 Role:** `EmployeeWebAppRole`
-  *Why:* Secure app access to AWS without storing credentials inside the server.
-* **Policies:** AWS-managed S3 + DynamoDB access to start
-  *Why:* Ready-made and tested — like using a meal kit instead of cooking from scratch.
+* **Users:** AdminUser, DevUser
+  *Why:* Like having separate keycards for managers and developers.
+* **Group:** EC2Admins
+  *Why:* Instead of giving keys one by one, put people in a **club** with shared access.
+* **EC2 Role:** EmployeeWebAppRole
+  *Why:* Give your server only the keys it needs — no more.
+* **Policies:** Start with AWS-managed S3 + DynamoDB access
+  *Why:* Quick to set up, safe to refine later.
 
-**Variables**
+### Variables
 
-* admin_user_name
-* dev_user_name
-* iam_group_name
-* ec2_role_name
-* managed_policy_arns (list)
+admin\_user\_name
+dev\_user\_name
+iam\_group\_name
+ec2\_role\_name
+managed\_policy\_arns (list)
 
-**Docs to Read (Why)**
+### Docs to Read (Why)
 
-* **aws\_iam\_user** – Creates AWS login identities.
-* **aws\_iam\_group** – A bucket to organize users.
-* **aws\_iam\_group\_policy\_attachment** – Attaches permissions to a group.
-* **aws\_iam\_role** – The "identity" for AWS services.
-* **aws\_iam\_instance\_profile** – Connects an IAM role to EC2.
+* **aws\_iam\_user** – How to create keycard holders.
+* **aws\_iam\_group** – How to create clubs.
+* **aws\_iam\_group\_policy\_attachment** – How to give clubs their access rights.
+* **aws\_iam\_role** – How to give services permissions.
+* **aws\_iam\_instance\_profile** – How to attach roles to EC2.
 
-**AI Prompt Template**
+### AI Prompt Template
 
 > Generate Terraform AWS IAM configuration that creates:
-  Users ${var.admin_user_name} and ${var.dev_user_name}
-  Group ${var.iam_group_name} with ${var.managed_policy_arns} attached
-  Role ${var.ec2_role_name} with trust for EC2 and the same managed policies
-  Instance profile bound to that role
-  Use variables and tagging from my global setup.
+>
+> * Users \${var.admin\_user\_name} and \${var.dev\_user\_name}
+> * Group \${var.iam\_group\_name} with \${var.managed\_policy\_arns} attached
+> * Role \${var.ec2\_role\_name} with trust for EC2 and the same managed policies
+> * Instance profile bound to that role
+>   Use variables and tagging from my global setup.
 
 ---
 
-## 🌐 Module 2 — EC2
+## 🌐 Module 3 — EC2
 
-**Decisions**
+### Decisions
 
 * **AMI:** Amazon Linux 2023
-  *Why:* Lightweight, secure, AWS-optimized OS.
-* **Instance type:** `t2.micro`
-  *Why:* Cheap/free-tier for testing.
+  *Why:* AWS-maintained and optimized — like a car tuned for the local roads.
+* **Instance type:** t2.micro
+  *Why:* Fits in the free tier — perfect for testing.
 * **Security group:** HTTP/HTTPS only
-  *Why:* Minimize open ports — lock all but necessary doors.
-* **Attach IAM instance profile from Module 1**
-  *Why:* Allows EC2 to securely talk to AWS services.
+  *Why:* Locks the front door, leaves only the website door open.
+* **Attach IAM profile from IAM module**
+  *Why:* Lets EC2 talk to S3/DynamoDB without hard-coded passwords.
 
-**Variables**
+### Variables
 
-* instance_name
-* instance_type
-* ami_id or data aws_ami lookup
-* user_data_path
-* web_ingress_cidrs (list)
-* vpc_id
-* subnet_id
+instance\_name
+instance\_type
+ami\_id or data aws\_ami lookup
+user\_data\_path
+web\_ingress\_cidrs (list)
+vpc\_id, subnet\_id
 
-**Docs to Read (Why)**
+### Docs to Read (Why)
 
-* **aws\_instance** – Defines the server.
-* **aws\_security\_group** – Sets network rules.
-* **data aws\_ami** – Finds the latest OS image.
-* **user\_data** – Script to auto-configure the instance.
+* **aws\_instance** – The blueprint for launching a server.
+* **aws\_security\_group** – Your firewall.
+* **data aws\_ami** – Finds the latest server image.
+* **user\_data** – Startup script for your server.
 
-**AI Prompt Template**
+### AI Prompt Template
 
 > Generate Terraform AWS EC2 configuration that launches:
-  An instance ${var.instance_name} in ${var.subnet_id} with ${var.instance_type}
-  Using AMI from data source for Amazon Linux 2023
-  With security group allowing HTTP/HTTPS from ${var.web_ingress_cidrs}
-  Attaching IAM instance profile ${var.ec2_instance_profile}
-  Running user_data script from ${var.user_data_path}
-  Output the instance public IP.
+>
+> * An instance \${var.instance\_name} in \${var.subnet\_id} with \${var.instance\_type}
+> * Using AMI from data source for Amazon Linux 2023
+> * With security group allowing HTTP/HTTPS from \${var.web\_ingress\_cidrs}
+> * Attaching IAM instance profile \${var.ec2\_instance\_profile}
+> * Running user\_data script from \${var.user\_data\_path}
+>   Output the instance public IP.
 
 ---
 
-## 🏗️ Module 3 — VPC & Networking
+## 🏗️ Module 4 — VPC & Networking
 
-**Decisions**
+### Decisions
 
-* **CIDR:** `10.1.0.0/16`
-  *Why:* Gives enough IPs for scaling without overlap.
-* **2 AZs:** (e.g., eu-west-2a, eu-west-2b)
-  *Why:* Higher availability and fault tolerance.
-* **Public/Private subnets**
-  *Why:* Public for web traffic, private for backend security.
-* **Internet Gateway + Public Route Table**
-  *Why:* Needed for public subnet access to the internet.
+* **CIDR:** 10.1.0.0/16
+  *Why:* Your app’s private street address range.
+* **2 AZs:** eu-west-2a, eu-west-2b
+  *Why:* If one area has a power cut, the other keeps running.
+* **Public & private subnets**
+  *Why:* Like having a public shop front and a private storeroom.
+* **Internet gateway + public route table**
+  *Why:* The internet gateway is the **main road** into your shop.
 
-**Variables**
+### Variables
 
-* vpc_cidr
-* azs (list)
-* public_subnet_cidrs
-* private_subnet_cidrs
-* enable_nat_gateway
+vpc\_cidr
+azs (list)
+public\_subnet\_cidrs
+private\_subnet\_cidrs
+enable\_nat\_gateway
 
-**Docs to Read (Why)**
+### Docs to Read (Why)
 
-* **aws\_vpc** – Your private network in AWS.
-* **aws\_subnet** – Smaller chunks of your VPC.
+* **aws\_vpc** – Creates your private network.
+* **aws\_subnet** – Divides your network into smaller zones.
 * **aws\_internet\_gateway** – The bridge to the internet.
-* **aws\_route\_table** – The GPS routes for network traffic.
+* **aws\_route\_table** – The map of where traffic should go.
 
-**AI Prompt Template**
+### AI Prompt Template
 
 > Generate Terraform AWS VPC configuration for:
-  CIDR ${var.vpc_cidr}
-  Public subnets ${var.public_subnet_cidrs} and private subnets ${var.private_subnet_cidrs}
-  Internet gateway and public route table associated with public subnets
-  Include variable inputs and tags from my global setup.
+>
+> * CIDR \${var.vpc\_cidr}
+> * Public subnets \${var.public\_subnet\_cidrs} and private subnets \${var.private\_subnet\_cidrs}
+> * Internet gateway and public route table associated with public subnets
+>   Include variable inputs and tags from my global setup.
 
 ---
 
-## 🪣 Module 4 — S3
+## 🪣 Module 5 — S3
 
-**Decisions**
+### Decisions
 
 * **Unique bucket name**
-  *Why:* S3 bucket names are global — like unique usernames.
+  *Why:* S3 is like email addresses — names must be unique across the world.
 * **Block public access**
-  *Why:* Prevents accidental data leaks.
+  *Why:* Stops anyone from peeking into your storage box.
 * **Allow only EC2 role to Put/Get**
-  *Why:* Restricts access to just the app.
+  *Why:* Gives your app the keys, but no one else.
 
-**Variables**
+### Variables
 
-* photos_bucket_name
-* bucket_force_destroy
+photos\_bucket\_name
+bucket\_force\_destroy
 
-**Docs to Read (Why)**
+### Docs to Read (Why)
 
-* **aws\_s3\_bucket** – Creates storage buckets.
-* **aws\_s3\_bucket\_policy** – Defines who can access it.
-* **aws\_s3\_bucket\_public\_access\_block** – Stops public exposure.
+* **aws\_s3\_bucket** – Creates the storage box.
+* **aws\_s3\_bucket\_policy** – Controls who can open it.
+* **aws\_s3\_bucket\_public\_access\_block** – Slaps a “Private” sticker on it.
 
-**AI Prompt Template**
+### AI Prompt Template
 
 > Generate Terraform AWS S3 configuration for:
-  Bucket ${var.photos_bucket_name} with public access blocked
-  Bucket policy allowing only IAM role ${var.ec2_role_name} to Put/Get objects
-  force_destroy set to ${var.bucket_force_destroy}
+>
+> * Bucket \${var.photos\_bucket\_name} with public access blocked
+> * Bucket policy allowing only IAM role \${var.ec2\_role\_name} to Put/Get objects
+> * force\_destroy set to \${var.bucket\_force\_destroy}
 
 ---
 
-## 📄 Module 5 — DynamoDB
+## 📄 Module 6 — DynamoDB
 
-**Decisions**
+### Decisions
 
-* **Table:** `Employees`
-  *Why:* Stores employee data for the app.
-* **Partition key:** `id` (String)
-  *Why:* Uniquely identifies each record.
-* **Billing mode:** `PAY_PER_REQUEST`
-  *Why:* Only pay for what’s used — good for dev/testing.
+* **Table name:** Employees
+  *Why:* Stores all your employee info.
+* **Partition key:** id (String)
+  *Why:* Like a unique ID badge for each record.
+* **Billing mode:** PAY\_PER\_REQUEST
+  *Why:* Pay only when people come to your shop — no rent for empty space.
 
-**Variables**
+### Variables
 
-* ddb_table_name
-* ddb_hash_key
-* ddb_billing_mode
+ddb\_table\_name
+ddb\_hash\_key
+ddb\_billing\_mode
 
+### Docs to Read (Why)
 
-**Docs to Read (Why)**
+* **aws\_dynamodb\_table** – How to make the database.
+* **aws\_iam\_policy** – How to give your app the right permissions.
 
-* **aws\_dynamodb\_table** – Creates NoSQL database tables.
-* **aws\_iam\_policy** – Least-privilege CRUD permissions.
-
-**AI Prompt Template**
+### AI Prompt Template
 
 > Generate Terraform AWS DynamoDB configuration for:
-  Table ${var.ddb_table_name} with hash key ${var.ddb_hash_key} (String)
-  Billing mode ${var.ddb_billing_mode}
-  Tagged with my global tags
-
+>
+> * Table \${var.ddb\_table\_name} with hash key \${var.ddb\_hash\_key} (String)
+> * Billing mode \${var.ddb\_billing\_mode}
+> * Tagged with my global tags
 
 ---
 
-## ⚖️ Module 6 — ALB + Auto Scaling
+## ⚖️ Module 7 — ALB + Auto Scaling
 
-**Decisions**
+### Decisions
 
-* **ALB:** Internet-facing, 2 subnets
-  *Why:* Distributes traffic across instances for reliability.
+* **ALB:** Internet-facing across 2 public subnets
+  *Why:* Like a receptionist that sends visitors to the right desk.
 * **Target group:** HTTP on `/`
-  *Why:* ALB needs a health check route.
-* **Launch template:** For EC2 configs
-  *Why:* Standardizes instance creation.
-* **ASG:** `desired/min/max = 2/2/4`
-  *Why:* Keeps enough servers running, scales during load.
+  *Why:* The ALB’s checklist to know if your app is healthy.
+* **Launch template:** EC2 config
+  *Why:* Like a cookie cutter for making identical servers.
+* **ASG:** desired/min/max = 2/2/4
+  *Why:* Keeps enough servers running but can grow on demand.
 * **Scaling policy:** Target CPU 60%
-  *Why:* Add/remove instances automatically.
+  *Why:* Keeps the workload balanced without overspending.
 
-**Variables**
+### Variables
 
-* alb_name
-* target_group_name
-* health_check_path
-* launch_template_name
-* asg_desired
-* asg_min
-* asg_max
-* cpu_target_utilization
+alb\_name
+target\_group\_name
+health\_check\_path
+launch\_template\_name
+asg\_desired, asg\_min, asg\_max
+cpu\_target\_utilization
 
+### Docs to Read (Why)
 
-**Docs to Read (Why)**
+* **aws\_lb** – How to make the receptionist.
+* **aws\_lb\_target\_group** – How to group desks (servers).
+* **aws\_launch\_template** – The recipe for servers.
+* **aws\_autoscaling\_group** – The team that manages adding/removing servers.
+* **aws\_autoscaling\_policy** – The rules for when to scale.
 
-* **aws\_lb** – Load balancer resource.
-* **aws\_lb\_target\_group** – Directs traffic to registered targets.
-* **aws\_launch\_template** – Blueprint for EC2 instances.
-* **aws\_autoscaling\_group** – Scales instances automatically.
-* **aws\_autoscaling\_policy** – Rules for scaling up/down.
-
-**AI Prompt Template**
+### AI Prompt Template
 
 > Generate Terraform AWS ALB + Auto Scaling configuration for:
-  ALB ${var.alb_name} across ${var.public_subnet_ids}
-  Target group ${var.target_group_name} with health check path ${var.health_check_path}
-  Launch template ${var.launch_template_name}
-  ASG desired/min/max = ${var.asg_desired}, ${var.asg_min}, ${var.asg_max}
-  Target tracking scaling policy for ${var.cpu_target_utilization}% CPU
+>
+> * ALB \${var.alb\_name} across \${var.public\_subnet\_ids}
+> * Target group \${var.target\_group\_name} with health check path \${var.health\_check\_path}
+> * Launch template \${var.launch\_template\_name}
+> * ASG desired/min/max = \${var.asg\_desired}, \${var.asg\_min}, \${var.asg\_max}
+> * Target tracking scaling policy for \${var.cpu\_target\_utilization}% CPU
 
