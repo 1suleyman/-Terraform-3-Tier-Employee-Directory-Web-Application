@@ -10,28 +10,49 @@ Each module contains:
 
 ---
 
-## 🛠️ Module 0 — Local Prerequisites
+## 🛠️ Module 0 — Local & Remote State Setup
 
-### Decisions
+**Decisions**
 
-* **Create S3 bucket for remote state** (e.g., `tf-state-employee-directory`)
-  *Why:* Think of this as a **shared project diary**. It stores Terraform’s “memory” so you (and teammates) don’t forget what’s already built.
-* **Create DynamoDB table for state locking** (e.g., `tf-state-locks`)
-  *Why:* This is like a **"Room in Use" sign**. It stops two people from changing the project at the same time and breaking things.
+* **Create S3 bucket for Terraform state**
+  *Why:* Think of this like a shared notebook where Terraform writes down what it has built. Storing it in S3 means you can access it from anywhere and share it across your team.
 
-### Variables
+* **Enable versioning on the bucket**
+  *Why:* If Terraform’s “notebook” gets messed up, versioning is your backup — you can roll back to a previous version.
 
-bucket
-dynamodb\_table
+* **Create DynamoDB table for state locking**
+  *Why:* This is like putting a “Do Not Disturb” sign on the notebook. It stops two people from editing the same infrastructure at the same time.
 
-### Docs to Read (Why)
+* **Name resources using project + environment**
+  *Why:* Makes them easy to identify in the AWS Console (e.g., `tfstate-employee-directory-dev`).
 
-* **AWS S3 CLI** – How to create the storage for your Terraform “memory”.
-* **AWS DynamoDB CLI** – How to set up the “Room in Use” sign.
+---
 
-### AI Prompt Template
+**Variables**
 
-> Generate AWS CLI commands to create an S3 bucket named \${bucket} in region \${aws\_region} with versioning enabled, and a DynamoDB table named \${dynamodb\_table} with "LockID" as the primary key for Terraform state locking.
+* `state_bucket_name` — Name of S3 bucket for storing Terraform state.
+* `state_dynamodb_table` — Name of DynamoDB table for locking.
+* `aws_region` — Region where bucket and table will be created.
+* `tags` — Default tags to apply to both resources.
+
+---
+
+**Docs to Read (Why)**
+
+* **aws\_s3\_bucket** – Learn syntax for creating S3 buckets in Terraform.
+* **aws\_s3\_bucket\_versioning** – Enable versioning for rollback safety.
+* **aws\_dynamodb\_table** – Create the table Terraform uses for locking.
+* **terraform backend s3** – Configure Terraform to use the bucket/table automatically.
+
+---
+
+**AI Prompt Template**
+
+> Generate Terraform configuration that creates:
+>
+> 1. An S3 bucket `${var.state_bucket_name}` in `${var.aws_region}` with versioning enabled, tagged with `${var.tags}`.
+> 2. A DynamoDB table `${var.state_dynamodb_table}` with primary key `LockID` (string) for state locking, tagged with `${var.tags}`.
+> 3. Configure Terraform backend to use this S3 bucket for remote state storage and DynamoDB for locking. Use variables for names, region, and tags.
 
 ---
 
