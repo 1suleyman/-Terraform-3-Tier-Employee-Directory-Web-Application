@@ -38,7 +38,12 @@ Quick links to the main learning artifacts in this repo:
 
 * 📘 **Planned Steps** – Terraform module breakdowns, configuration structure, and IaC design decisions
 * 🛠️ **Executed Walkthrough** – Terraform code examples, plan/apply logs, screenshots, and testing notes
-* 📊 **Architecture Diagram** – Visual overview of AWS resources and networking layout
+
+---
+
+## 📊 Architecture Diagram
+
+![Screenshot 2025-07-08 at 10 41 47](https://github.com/user-attachments/assets/0e6db769-0053-41a3-a6cf-d135515adbff)
 
 ---
 
