@@ -1,73 +1,12 @@
-# 🧑‍💻 Terraform 3-Tier Employee Directory Web Application
+# 📋 Planned Terraform 3-Tier Employee Directory Web Application
 
-Welcome to my **Terraform-powered AWS lab project**!
-This repository documents my **step-by-step journey** building a **3-Tier Employee Directory Web Application** on AWS — with every resource fully provisioned using Infrastructure as Code.
+This document is my **blueprint** for building a **Terraform-powered AWS 3-Tier Employee Directory Application**.
+It contains:
 
----
-
-## 📌 Project Overview
-
-The goal of this project is to **design, provision, and scale** a production-style cloud application using **Terraform** to automate every part of the build.
-
-Instead of manually clicking through the AWS Console, this project uses **`.tf` configuration files** and the Terraform CLI to:
-
-* Deploy
-* Test
-* Tear down
-* Re-deploy
-
-…in a **repeatable** and **version-controlled** way.
-
----
-
-## 🎯 Objective
-
-Build a **secure**, **scalable**, and **highly available** Employee Directory web application — fully managed by Terraform.
-
----
-
-## 🛠️ Infrastructure Stack (Provisioned via Terraform)
-
-* **Amazon EC2** – Compute for Flask web server
-* **Amazon S3** – Stores employee profile photos
-* **Amazon DynamoDB** – NoSQL database for employee data
-* **IAM** – Roles, policies, and least-privilege access
-* **Amazon VPC** – Custom networking with public/private subnets
-* **Elastic Load Balancer** – Distributes traffic across multiple AZs
-* **EC2 Auto Scaling** – Automatically scales based on demand
-* **\[Planned] API Gateway + Lambda** – Serverless contact form feature
-
----
-
-## 🗂️ Module Overview
-
-This Terraform project is divided into **6 modules**, each mapped to a core AWS concept:
-
-1. **IAM** — Users, groups, roles, MFA
-2. **EC2** — Hosting the application on a virtual server
-3. **VPC** — Custom networking with public/private subnets
-4. **S3** — Storing profile images with restricted access
-5. **DynamoDB** — Persistent data storage for the app
-6. **Monitoring & Scaling** — Load balancing and auto scaling
-
-Each module includes:
-
-* `main.tf` – Core resource definitions
-* `variables.tf` – Configurable inputs
-* `outputs.tf` – Key resource outputs
-* Documentation notes + CLI commands
-
----
-
-# 📋 Portfolio Build Checklist
-
-This checklist blends **technical decisions**, **variables to define**, and **Terraform Registry research targets**.
-Use it as a **scavenger hunt**:
-
-1. Create the variables
-2. Search the AWS provider docs for the resource/data source
-3. Implement in Terraform
-4. Validate via AWS CLI/Console
+1. **Architecture & decisions** – what I want to build and why.
+2. **Variables to define** – so configs are reusable.
+3. **Terraform Registry research targets** – to understand the syntax.
+4. **AI Prompt Templates** – so I can quickly generate boilerplate Terraform code, then fill in my specific variables.
 
 ---
 
@@ -87,17 +26,17 @@ Use it as a **scavenger hunt**:
 * `environment`
 * `tags` (map)
 
-**Docs to read**
+**Docs to Read**
 
 * `aws provider`
 * `terraform backend s3`
 * `terraform state locking dynamodb`
 * `terraform workspaces`
-* `terraform input variables / outputs / locals`
+* `terraform variables`, `outputs`, `locals`
 
-**Validate**
+**AI Prompt Template**
 
-* `terraform init` with backend works; state file in S3; lock table in DynamoDB.
+> Generate Terraform configuration to set up the AWS provider in region `${var.aws_region}`, with default tags `${var.tags}`, and configure a remote S3 backend with DynamoDB state locking. Include variables for `project_name`, `environment`, and `aws_region`.
 
 ---
 
@@ -106,9 +45,9 @@ Use it as a **scavenger hunt**:
 **Decisions**
 
 * Users: `AdminUser`, `DevUser`
-* Group: `EC2Admins` (start broad, later least-privilege)
-* EC2 role: `EmployeeWebAppRole`
-* Start with AWS managed policies for S3 + DynamoDB
+* Group: `EC2Admins`
+* EC2 Role: `EmployeeWebAppRole`
+* Policies: Start with AWS managed S3 + DynamoDB access
 
 **Variables**
 
@@ -116,9 +55,9 @@ Use it as a **scavenger hunt**:
 * `dev_user_name`
 * `iam_group_name`
 * `ec2_role_name`
-* `managed_policy_arns` (list, optional)
+* `managed_policy_arns` (list)
 
-**Docs to read**
+**Docs to Read**
 
 * `aws_iam_user`
 * `aws_iam_group`
@@ -126,11 +65,15 @@ Use it as a **scavenger hunt**:
 * `aws_iam_role` (assume role policy)
 * `aws_iam_instance_profile`
 
-**Validate**
+**AI Prompt Template**
 
-* `aws iam list-users`
-* `aws iam list-roles`
-* Role trust principal = `ec2.amazonaws.com`.
+> Generate Terraform AWS IAM configuration that creates:
+>
+> * Users `${var.admin_user_name}` and `${var.dev_user_name}`
+> * Group `${var.iam_group_name}` with `${var.managed_policy_arns}` attached
+> * Role `${var.ec2_role_name}` with trust for EC2 and the same managed policies
+> * Instance profile bound to that role
+>   Use variables and tagging from my global setup.
 
 ---
 
@@ -138,11 +81,10 @@ Use it as a **scavenger hunt**:
 
 **Decisions**
 
-* AMI (Amazon Linux 2023)
-* Instance type (`t2.micro`)
-* User data script path
+* AMI: Amazon Linux 2023
+* Instance type: `t2.micro`
 * Security group: HTTP/HTTPS only
-* Attach instance profile from IAM module
+* Attach IAM instance profile from Module 1
 
 **Variables**
 
@@ -153,17 +95,23 @@ Use it as a **scavenger hunt**:
 * `web_ingress_cidrs` (list)
 * `vpc_id`, `subnet_id`
 
-**Docs to read**
+**Docs to Read**
 
 * `aws_instance`
 * `aws_security_group`
 * `data aws_ami`
 * `user_data vs user_data_replace_on_change`
 
-**Validate**
+**AI Prompt Template**
 
-* `terraform output ec2_public_ip`
-* `curl http://<public-ip>` loads app.
+> Generate Terraform AWS EC2 configuration that launches:
+>
+> * An instance `${var.instance_name}` in `${var.subnet_id}` with `${var.instance_type}`
+> * Using AMI from data source for Amazon Linux 2023
+> * With security group allowing HTTP/HTTPS from `${var.web_ingress_cidrs}`
+> * Attaching IAM instance profile `${var.ec2_instance_profile}`
+> * Running `user_data` script from `${var.user_data_path}`
+>   Output the instance public IP.
 
 ---
 
@@ -171,10 +119,10 @@ Use it as a **scavenger hunt**:
 
 **Decisions**
 
-* VPC CIDR: `10.1.0.0/16`
+* CIDR: `10.1.0.0/16`
 * 2 AZs (`eu-west-2a`, `eu-west-2b`)
-* Public subnets: `10.1.1.0/24`, `10.1.3.0/24`
-* Private subnets: `10.1.2.0/24`, `10.1.4.0/24`
+* Public/Private subnets
+* Internet Gateway + public route table
 
 **Variables**
 
@@ -182,18 +130,24 @@ Use it as a **scavenger hunt**:
 * `azs` (list)
 * `public_subnet_cidrs`
 * `private_subnet_cidrs`
-* `enable_nat_gateway` (optional)
+* `enable_nat_gateway`
 
-**Docs to read**
+**Docs to Read**
 
 * `aws_vpc`
 * `aws_subnet`
 * `aws_internet_gateway`
-* `aws_route_table` / `aws_route_table_association`
+* `aws_route_table`
+* `aws_route_table_association`
 
-**Validate**
+**AI Prompt Template**
 
-* Public subnets map public IPs; internet access works.
+> Generate Terraform AWS VPC configuration for:
+>
+> * CIDR `${var.vpc_cidr}`
+> * Public subnets `${var.public_subnet_cidrs}` and private subnets `${var.private_subnet_cidrs}`
+> * Internet gateway and public route table associated with public subnets
+>   Include variable inputs and tags from my global setup.
 
 ---
 
@@ -203,22 +157,26 @@ Use it as a **scavenger hunt**:
 
 * Unique bucket name
 * Block public access
-* Bucket policy: allow only EC2 role to Put/Get
+* Allow only EC2 role to Put/Get
 
 **Variables**
 
 * `photos_bucket_name`
 * `bucket_force_destroy`
 
-**Docs to read**
+**Docs to Read**
 
 * `aws_s3_bucket`
 * `aws_s3_bucket_policy`
 * `aws_s3_bucket_public_access_block`
 
-**Validate**
+**AI Prompt Template**
 
-* App upload works; bucket private.
+> Generate Terraform AWS S3 configuration for:
+>
+> * Bucket `${var.photos_bucket_name}` with public access blocked
+> * Bucket policy allowing only IAM role `${var.ec2_role_name}` to Put/Get objects
+> * `force_destroy` set to `${var.bucket_force_destroy}`
 
 ---
 
@@ -226,7 +184,7 @@ Use it as a **scavenger hunt**:
 
 **Decisions**
 
-* Table name: `Employees`
+* Table: `Employees`
 * Partition key: `id` (String)
 * Billing mode: `PAY_PER_REQUEST`
 
@@ -236,14 +194,18 @@ Use it as a **scavenger hunt**:
 * `ddb_hash_key`
 * `ddb_billing_mode`
 
-**Docs to read**
+**Docs to Read**
 
 * `aws_dynamodb_table`
 * `aws_iam_policy` (least-privilege CRUD)
 
-**Validate**
+**AI Prompt Template**
 
-* Employee added → record in DynamoDB.
+> Generate Terraform AWS DynamoDB configuration for:
+>
+> * Table `${var.ddb_table_name}` with hash key `${var.ddb_hash_key}` (String)
+> * Billing mode `${var.ddb_billing_mode}`
+> * Tagged with my global tags
 
 ---
 
@@ -252,9 +214,9 @@ Use it as a **scavenger hunt**:
 **Decisions**
 
 * ALB: internet-facing, 2 subnets
-* Target group: HTTP, health check `/`
+* Target group: HTTP on `/`
 * Launch template for EC2
-* ASG desired/min/max: `2/2/4`
+* ASG: desired/min/max = `2/2/4`
 * Scaling policy: target CPU 60%
 
 **Variables**
@@ -266,7 +228,7 @@ Use it as a **scavenger hunt**:
 * `asg_desired`, `asg_min`, `asg_max`
 * `cpu_target_utilization`
 
-**Docs to read**
+**Docs to Read**
 
 * `aws_lb`
 * `aws_lb_target_group`
@@ -274,9 +236,15 @@ Use it as a **scavenger hunt**:
 * `aws_autoscaling_group`
 * `aws_autoscaling_policy`
 
-**Validate**
+**AI Prompt Template**
 
-* ALB DNS works; ASG scales under load.
+> Generate Terraform AWS ALB + Auto Scaling configuration for:
+>
+> * ALB `${var.alb_name}` across `${var.public_subnet_ids}`
+> * Target group `${var.target_group_name}` with health check path `${var.health_check_path}`
+> * Launch template `${var.launch_template_name}`
+> * ASG desired/min/max = `${var.asg_desired}`, `${var.asg_min}`, `${var.asg_max}`
+> * Target tracking scaling policy for `${var.cpu_target_utilization}`% CPU
 
 ---
 
@@ -285,48 +253,26 @@ Use it as a **scavenger hunt**:
 **Decisions**
 
 * Env vars: `PHOTOS_BUCKET`, `AWS_DEFAULT_REGION`, `DYNAMO_MODE`
-* Store script in `scripts/` folder
+* Script stored in `/scripts/user_data.sh`
 
 **Variables**
 
 * `app_env` (map)
 * `user_data_path`
 
-**Docs to read**
+**Docs to Read**
 
 * `terraform templatefile`
 * `aws_instance user_data`
 * `aws_launch_template user_data`
 
-**Validate**
+**AI Prompt Template**
 
-* `printenv` shows expected vars in instance.
-
----
-
-## 🧠 State, Environments, Quality
-
-**Decisions**
-
-* State bucket/key per env
-* Lock table name
-* Workspaces vs per-env folders
-* Formatting & validation before apply
-
-**Variables**
-
-* `state_bucket`, `state_key`, `state_dynamodb_table`
-* `owner`, `cost_center`
-
-**Docs to read**
-
-* `backend "s3"`
-* `terraform workspaces`
-* `terraform fmt` / `terraform validate`
-
-**Validate**
-
-* Separate state for dev/prod; fmt/validate pass.
+> Generate Terraform EC2 user\_data configuration that:
+>
+> * Sets environment variables from `${var.app_env}`
+> * Runs Flask app installation commands
+> * Uses `templatefile` to render `${var.user_data_path}`
 
 ---
 
@@ -334,19 +280,19 @@ Use it as a **scavenger hunt**:
 
 **Decisions**
 
-* Consistent `default_tags`
-* Name prefix pattern
+* Use `default_tags` provider block
+* Name prefix pattern: `${var.project_name}-${var.environment}`
 
 **Variables**
 
 * `name_prefix`
 * `default_tags` (map)
 
-**Docs to read**
+**Docs to Read**
 
 * `provider "aws" default_tags`
 * `terraform locals`
 
-**Validate**
+**AI Prompt Template**
 
-* All resources tagged consistently.
+> Generate Terraform provider block with `default_tags` set to `${var.default_tags}`, and ensure all resources include a `Name` tag prefixed with `${var.name_prefix}`.
