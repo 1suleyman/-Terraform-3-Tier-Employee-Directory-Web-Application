@@ -1,272 +1,221 @@
-# 🛠️ Executed — Terraform 3-Tier Employee Directory Web Application
+# 🛠️ Project Execution: Terraform 3-Tier Employee Directory Application
 
-This is my **hands-on execution log** for building the Terraform-powered AWS 3-Tier Employee Directory App.
-It mirrors my `PLANNED.md` file so I can track:
+Welcome to the **hands-on execution log** of my Terraform 3-Tier Employee Directory Web Application project.
 
-* ✅ What I actually built
-* 📜 Snippets of `.tf` code used
-* 🖼️ AWS Console screenshots
-* 🧪 Test results
-* 🔧 Fixes applied when something didn’t work
-* 📦 Cleanup steps after each module
+This file documents **what I actually did** — from Module 0 (state setup) through Module 7 (ALB + Auto Scaling) — including:
+
+✅ **Terraform commands run** (`init`, `plan`, `apply`)
+📜 **Snippets of `.tf` code** for each AWS resource
+🖼️ **Screenshots** from AWS Console for visual proof
+🧪 **Tests and validations** of deployed infrastructure
+💡 **Lessons learned** and troubleshooting notes
+📦 **Cleanup** steps after each module to save costs
 
 ---
 
-## 🛠️ Module 0 — Local Prerequisites
+## 📋 Execution Modules
 
-**Goal:** Create S3 bucket for remote state and DynamoDB table for state locking.
+* **Module 0** – Local & Remote State Setup (S3 + DynamoDB)
+* **Module 1** – Global Project Setup (Provider, Tags, Variables)
+* **Module 2** – IAM (Users, Groups, Roles, Policies)
+* **Module 3** – EC2 (Web Server Deployment)
+* **Module 4** – VPC & Networking
+* **Module 5** – S3 (Profile Photo Storage)
+* **Module 6** – DynamoDB (Employee Records)
+* **Module 7** – ALB + Auto Scaling
 
-**Steps Taken:**
+---
 
-* [ ] Created S3 bucket: `tf-state-employee-directory` in `${aws_region}` with versioning enabled.
-* [ ] Created DynamoDB table: `tf-state-locks` with `LockID` as primary key.
+## 🛠️ Module 0 — Local & Remote State Setup
 
-**Terraform/CLI Snippets:**
+**Goal:**
+Create S3 bucket + DynamoDB table via Terraform for storing and locking Terraform state.
 
-```hcl
-# Paste relevant snippet here after execution
-```
+**Terraform Steps Taken:**
 
-**Screenshots to Capture:**
+1. Created `variables.tf` for:
 
-* [ ] S3 bucket details page (showing versioning enabled)
-* [ ] DynamoDB table details (showing primary key)
+   * `state_bucket_name`
+   * `state_dynamodb_table`
+   * `aws_region`
+   * `tags`
+2. Wrote `main.tf` to:
 
-**Tests & Verification:**
+   * Create S3 bucket with versioning
+   * Create DynamoDB table with primary key `LockID`
+3. Configured backend in `terraform` block to use the above S3/DynamoDB.
+4. Ran:
 
-* [ ] Confirmed S3 bucket exists in AWS Console.
-* [ ] Confirmed DynamoDB table exists with correct key schema.
+   ```bash
+   terraform init
+   terraform apply
+   ```
+5. Verified in AWS Console: S3 bucket exists + DynamoDB table created.
 
-**Cleanup Steps:**
+**Validation Checklist:**
 
-* [ ] Delete bucket and table if project is destroyed.
+* [ ] S3 bucket versioning enabled
+* [ ] DynamoDB table has `LockID` key
+* [ ] `terraform plan` works without backend errors
+
+**Lessons Learned:**
+*(Write after running — e.g., “Had to enable `force_destroy` in S3 for cleanup.”)*
 
 ---
 
 ## 🌍 Module 1 — Global Project Setup
 
-**Goal:** Configure AWS provider, default tags, and remote S3 backend with DynamoDB locking.
+**Goal:**
+Configure AWS provider, default tags, and global variables.
 
-**Steps Taken:**
+**Terraform Steps Taken:**
 
-* [ ] Created `provider.tf` with AWS provider in `${var.aws_region}`.
-* [ ] Configured backend to use S3 + DynamoDB locking.
-* [ ] Defined global variables (`aws_region`, `project_name`, `environment`, `tags`).
+1. Defined variables in `variables.tf`:
 
-**Terraform/CLI Snippets:**
+   * `aws_region`
+   * `project_name`
+   * `environment`
+   * `tags`
+2. Configured AWS provider block with default tags.
+3. Tested provider connection:
 
-```hcl
-# Paste relevant snippet here after execution
-```
+   ```bash
+   terraform plan
+   ```
 
-**Screenshots to Capture:**
+**Validation Checklist:**
 
-* [ ] `terraform init` output showing backend connected.
-* [ ] Workspace list showing `dev` and `prod`.
+* [ ] Provider loads correct region
+* [ ] Tags applied to all resources
 
-**Tests & Verification:**
-
-* [ ] Ran `terraform init` and confirmed backend connected.
-* [ ] Verified workspaces for `dev` and `prod`.
-
-**Cleanup Steps:**
-
-* [ ] None needed — provider and backend stay in place.
+**Lessons Learned:**
+*(Write after running)*
 
 ---
 
 ## 🔐 Module 2 — IAM
 
-**Goal:** Create IAM users, group, EC2 role, and instance profile.
+**Goal:**
+Create IAM users, group, EC2 role, and attach policies.
 
-**Steps Taken:**
+**Terraform Steps Taken:**
 
-* [ ] Created `AdminUser` and `DevUser`.
-* [ ] Created `EC2Admins` group and attached policies.
-* [ ] Created `EmployeeWebAppRole` for EC2.
-* [ ] Attached role to instance profile.
+* Created `iam.tf` to define:
 
-**Terraform Snippets:**
+  * Users `${var.admin_user_name}` & `${var.dev_user_name}`
+  * Group `${var.iam_group_name}`
+  * Role `${var.ec2_role_name}` with EC2 trust
+  * Managed policies from variables
+  * Instance profile
 
-```hcl
-# Paste relevant snippet here
-```
+**Validation Checklist:**
 
-**Screenshots to Capture:**
-
-* [ ] IAM Users list.
-* [ ] IAM Group details (policies attached).
-* [ ] IAM Role trust policy.
-
-**Tests & Verification:**
-
-* [ ] Checked IAM Console for users, group, and role.
-* [ ] Confirmed EC2 role has correct permissions.
-
-**Cleanup Steps:**
-
-* [ ] Remove users/roles/groups after project.
+* [ ] Users visible in AWS IAM
+* [ ] Group with correct policies exists
+* [ ] Role attached to EC2 instance profile
 
 ---
 
 ## 🌐 Module 3 — EC2
 
-**Goal:** Launch EC2 instance with Amazon Linux 2023, HTTP/HTTPS SG, and IAM profile.
+**Goal:**
+Launch EC2 instance for the Flask app with IAM role and security group.
 
-**Steps Taken:**
+**Terraform Steps Taken:**
 
-* [ ] Created security group allowing HTTP/HTTPS.
-* [ ] Used `data aws_ami` to fetch Amazon Linux 2023 AMI.
-* [ ] Attached IAM instance profile from Module 2.
-* [ ] Applied user\_data script.
+* Used `data "aws_ami"` to find Amazon Linux 2023.
+* Created `aws_instance` with:
 
-**Terraform Snippets:**
+  * `user_data` from `scripts/user_data.sh`
+  * IAM instance profile from Module 2
+* Allowed HTTP/HTTPS inbound from `${var.web_ingress_cidrs}`
 
-```hcl
-# Paste relevant snippet here
-```
+**Validation Checklist:**
 
-**Screenshots to Capture:**
-
-* [ ] EC2 instance list showing correct tags.
-* [ ] Security group inbound rules.
-* [ ] User Data script in Launch Template (if applicable).
-
-**Tests & Verification:**
-
-* [ ] Accessed EC2 public IP in browser and saw Flask app.
-* [ ] SSH/EC2 Connect into instance to verify packages.
-
-**Cleanup Steps:**
-
-* [ ] Terminate instances after testing.
+* [ ] EC2 launches without errors
+* [ ] App accessible via public IP
+* [ ] IAM role attached correctly
 
 ---
 
 ## 🏗️ Module 4 — VPC & Networking
 
-**Goal:** Create custom VPC with public/private subnets, IGW, and route tables.
+**Goal:**
+Deploy custom VPC with public/private subnets, IGW, and route tables.
 
-**Steps Taken:**
+**Terraform Steps Taken:**
 
-* [ ] Created VPC with CIDR `10.1.0.0/16`.
-* [ ] Added 2 AZs with public/private subnets.
-* [ ] Attached IGW and updated route tables.
+* Created `vpc.tf` for:
 
-**Terraform Snippets:**
+  * VPC with CIDR `${var.vpc_cidr}`
+  * Public/private subnets
+  * Internet Gateway
+  * Public route table associations
 
-```hcl
-# Paste relevant snippet here
-```
+**Validation Checklist:**
 
-**Screenshots to Capture:**
-
-* [ ] VPC overview in AWS Console.
-* [ ] Subnets list (public/private tags).
-* [ ] Route tables with correct associations.
-
-**Tests & Verification:**
-
-* [ ] Confirmed public subnets have internet access.
-* [ ] Confirmed private subnets route internally.
-
-**Cleanup Steps:**
-
-* [ ] Remove VPC and networking resources after project.
+* [ ] Subnets correctly tagged as public/private
+* [ ] Public subnet has internet access
 
 ---
 
 ## 🪣 Module 5 — S3
 
-**Goal:** Create S3 bucket for profile photos with restricted access.
+**Goal:**
+Set up S3 bucket for employee profile photos, restricted to EC2 role.
 
-**Steps Taken:**
+**Terraform Steps Taken:**
 
-* [ ] Created bucket with public access blocked.
-* [ ] Added bucket policy for EC2 role only.
+* Created `s3.tf`:
 
-**Terraform Snippets:**
+  * S3 bucket `${var.photos_bucket_name}`
+  * Public access blocked
+  * Bucket policy allowing only `${var.ec2_role_name}` to Put/Get
 
-```hcl
-# Paste relevant snippet here
-```
+**Validation Checklist:**
 
-**Screenshots to Capture:**
-
-* [ ] S3 bucket policy page.
-* [ ] Public access block settings.
-
-**Tests & Verification:**
-
-* [ ] Upload test file via EC2.
-* [ ] Verify only EC2 role can access.
-
-**Cleanup Steps:**
-
-* [ ] Delete bucket and objects after testing.
+* [ ] Bucket exists and blocks public access
+* [ ] EC2 can upload & retrieve photos
 
 ---
 
 ## 📄 Module 6 — DynamoDB
 
-**Goal:** Create DynamoDB table for employee records.
+**Goal:**
+Store employee records in DynamoDB table with PAY\_PER\_REQUEST billing.
 
-**Steps Taken:**
+**Terraform Steps Taken:**
 
-* [ ] Created `Employees` table with `id` as PK.
+* Created `dynamodb.tf`:
 
-**Terraform Snippets:**
+  * Table `${var.ddb_table_name}` with key `${var.ddb_hash_key}`
+  * IAM policy for EC2 CRUD access
 
-```hcl
-# Paste relevant snippet here
-```
+**Validation Checklist:**
 
-**Screenshots to Capture:**
-
-* [ ] DynamoDB table overview.
-* [ ] Item view showing sample data.
-
-**Tests & Verification:**
-
-* [ ] Insert and read record via app.
-
-**Cleanup Steps:**
-
-* [ ] Delete table after project.
+* [ ] Table exists in AWS
+* [ ] App can read/write records
 
 ---
 
 ## ⚖️ Module 7 — ALB + Auto Scaling
 
-**Goal:** Add load balancing and auto scaling for high availability.
+**Goal:**
+Add load balancer and scale EC2 instances automatically.
 
-**Steps Taken:**
+**Terraform Steps Taken:**
 
-* [ ] Created ALB across 2 public subnets.
-* [ ] Created target group and health checks.
-* [ ] Created launch template for EC2.
-* [ ] Created ASG with target tracking policy.
+* Created `alb.tf` and `asg.tf`:
 
-**Terraform Snippets:**
+  * ALB in public subnets
+  * Target group for app
+  * Launch template for EC2
+  * Auto Scaling Group with CPU target policy
 
-```hcl
-# Paste relevant snippet here
-```
+**Validation Checklist:**
 
-**Screenshots to Capture:**
-
-* [ ] ALB DNS in AWS Console.
-* [ ] Target group health status.
-* [ ] ASG scaling activity.
-
-**Tests & Verification:**
-
-* [ ] Stress test to trigger scaling.
-* [ ] Verify load balancer distributes traffic.
-
-**Cleanup Steps:**
-
-* [ ] Delete ALB, ASG, and launch template after project.
+* [ ] ALB distributes traffic evenly
+* [ ] Auto scaling triggers on CPU load
 
 ---
 
