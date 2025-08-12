@@ -205,60 +205,82 @@ This is useful for:
 
 ---
 
-## 🌍 Module 1 — Global Project Setup
+## 🛠️ **Module 1 — IAM Setup + Global Project Configuration**
 
-**Goal:**
-Configure AWS provider, default tags, and global variables.
+### **📂 Steps Taken**
 
-**Terraform Steps Taken:**
+**1️⃣ Provider & Defaults**
 
-1. Defined variables in `variables.tf`:
+* Added **`provider "aws"`** block:
 
-   * `aws_region`
-   * `project_name`
-   * `environment`
-   * `tags`
-2. Configured AWS provider block with default tags.
-3. Tested provider connection:
+  * `region = var.aws_region`
+  * `default_tags` block using `var.tags`
+* Verified `terraform workspace list` showed default workspace, then created `dev` workspace:
 
-   ```bash
-   terraform plan
-   ```
+  ```bash
+  terraform workspace new dev
+  terraform workspace select dev
+  ```
 
-**Validation Checklist:**
+**2️⃣ IAM Resources Created**
 
-* [ ] Provider loads correct region
-* [ ] Tags applied to all resources
+* **Users:**
 
-**Lessons Learned:**
-*(Write after running)*
+  * `AdminUser` → For project-wide administration
+  * `DevUser` → For development & testing
+    *(Both with console + programmatic access enabled)*
+* **Group:**
+
+  * `EC2Admins` group → Attached `AmazonEC2FullAccess` policy
+  * Added both users to the group
+* **Role:**
+
+  * `EmployeeWebAppRole` with trust policy for EC2
+  * Attached `AmazonS3FullAccess` & `AmazonDynamoDBFullAccess`
+  * Created **IAM Instance Profile** to attach to EC2 later
+
+**3️⃣ Applied Configuration**
+
+```bash
+terraform init
+terraform apply
+```
+
+**4️⃣ Validation**
+
+* Logged in as **AdminUser** and **DevUser** in AWS Console → access verified
+* Used AWS CLI:
+
+  ```bash
+  aws s3 ls --profile AdminUser
+  aws s3 ls --profile DevUser
+  ```
+
+  Both returned results (permissions working).
+* Verified role creation in IAM → trust relationship with EC2 confirmed.
 
 ---
 
-## 🔐 Module 2 — IAM
+### **✅ Validation Checklist**
 
-**Goal:**
-Create IAM users, group, EC2 role, and attach policies.
-
-**Terraform Steps Taken:**
-
-* Created `iam.tf` to define:
-
-  * Users `${var.admin_user_name}` & `${var.dev_user_name}`
-  * Group `${var.iam_group_name}`
-  * Role `${var.ec2_role_name}` with EC2 trust
-  * Managed policies from variables
-  * Instance profile
-
-**Validation Checklist:**
-
-* [ ] Users visible in AWS IAM
-* [ ] Group with correct policies exists
-* [ ] Role attached to EC2 instance profile
+* [ ] AWS provider configured with region + default tags
+* [ ] IAM users created with correct permissions
+* [ ] Group `EC2Admins` attached with `AmazonEC2FullAccess`
+* [ ] Role `EmployeeWebAppRole` created with EC2 trust policy
+* [ ] Terraform workspaces set up for `dev` environment
 
 ---
 
-## 🌐 Module 3 — EC2
+### **📚 Lessons Learned**
+
+* **Workspace switching** is instant and doesn’t require new init unless the backend changes.
+* **Tagging at the provider level** saves repeating tags in every resource.
+* IAM **managed policies** are a fast start, but custom policies will be needed for tighter security later.
+* Creating the **instance profile now** avoids backtracking when attaching it to EC2 in later modules.
+
+---
+
+## 🌐 Module 2 — EC2
 
 **Goal:**
 Launch EC2 instance for the Flask app with IAM role and security group.
@@ -280,7 +302,7 @@ Launch EC2 instance for the Flask app with IAM role and security group.
 
 ---
 
-## 🏗️ Module 4 — VPC & Networking
+## 🏗️ Module 3 — VPC & Networking
 
 **Goal:**
 Deploy custom VPC with public/private subnets, IGW, and route tables.
@@ -301,7 +323,7 @@ Deploy custom VPC with public/private subnets, IGW, and route tables.
 
 ---
 
-## 🪣 Module 5 — S3
+## 🪣 Module 4 — S3
 
 **Goal:**
 Set up S3 bucket for employee profile photos, restricted to EC2 role.
@@ -321,7 +343,7 @@ Set up S3 bucket for employee profile photos, restricted to EC2 role.
 
 ---
 
-## 📄 Module 6 — DynamoDB
+## 📄 Module 5 — DynamoDB
 
 **Goal:**
 Store employee records in DynamoDB table with PAY\_PER\_REQUEST billing.
@@ -340,7 +362,7 @@ Store employee records in DynamoDB table with PAY\_PER\_REQUEST billing.
 
 ---
 
-## ⚖️ Module 7 — ALB + Auto Scaling
+## ⚖️ Module 6 — ALB + Auto Scaling
 
 **Goal:**
 Add load balancer and scale EC2 instances automatically.
