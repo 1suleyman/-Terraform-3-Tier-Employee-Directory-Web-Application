@@ -53,19 +53,47 @@ I changed this because:
    * Region: `eu-west-2`
    * Versioning: Enabled ✅
    * Public access: Blocked ✅
-   * Encryption: AES256
+   * Encryption: Amazon S3 managed keys (SSE-S3)
    * Tags: `Project=Employee Directory`, `Environment=Development`, `ManagedBy=Manual`
+
+<img width="558" height="178" alt="Screenshot 2025-08-12 at 16 11 27" src="https://github.com/user-attachments/assets/26c3b0d4-ee4c-47da-a236-b111a769c771" />
+
 2. Created DynamoDB table `tf-state-locks`:
 
-   * PK: `LockID` (String)
-   * Billing mode: On-demand
+   * Partition key (PK): `LockID` (String)
+   * Table settings: default
    * Same tags applied
+
+<img width="429" height="183" alt="Screenshot 2025-08-12 at 16 10 58" src="https://github.com/user-attachments/assets/7b49dc24-66ef-4949-8039-4a06b98b3712" />
+
 3. Ran:
 
    ```bash
    terraform init -backend-config=backend.hcl
    ```
 4. Verified backend connection worked.
+
+<img width="602" height="216" alt="Screenshot 2025-08-12 at 16 14 38" src="https://github.com/user-attachments/assets/55ae246c-de53-4f14-b67f-dcf8e42ec3fa" />
+
+When I got to step 4 and ran:
+
+```bash
+terraform init -backend-config=backend.hcl
+```
+
+…I checked the S3 bucket and noticed there was no `.tfstate` file.
+I initially thought something was wrong, but I later realised this is **expected behaviour** — `terraform init` just connects Terraform to the remote backend; it doesn’t actually create or upload a state file until I run a command that changes infrastructure (like `terraform apply`).
+
+In my backend config, I ended up using:
+
+```hcl
+key = "devterraform.tfstate"
+```
+
+So the state file will only appear in S3 under that exact name after my first successful `terraform apply`.
+Once I applied a simple test resource, the file appeared in the bucket, and DynamoDB started showing lock entries during applies.
+
+💡 Next time, I’ll remember to run a quick test apply right after `init` so I can immediately verify the backend is working.
 
 ---
 
