@@ -33,31 +33,36 @@ Set up Terraform’s “memory” (state) to live in S3, with a DynamoDB lock to
 
 ---
 
-### **Terraform Steps Taken**
+## 🛠️ Module 0 — Local & Remote State Setup
 
-**📂 Phase A – Bootstrap (Local State)**
+### **📂 Phase A – Bootstrap (Local State)**
+
+**Goal:** Provision the Terraform remote state infrastructure (S3 + DynamoDB) using **local state first**.
+
+**Steps Taken:**
 
 * Created **`variables.tf`** defining:
 
-  * `state_bucket_name` — name for S3 bucket
-  * `state_dynamodb_table` — name for DynamoDB lock table
-  * `aws_region` — AWS region
-  * `tags` — default project tags
+  * `state_bucket_name` → name for S3 bucket
+  * `state_dynamodb_table` → name for DynamoDB lock table
+  * `aws_region` → AWS region
+  * `tags` → default project tags
 
 * Wrote **`main.tf`** to:
 
   * Create an **S3 bucket** with:
 
-    * `Versioning: Enabled` ✅ (undo button)
-    * `force_destroy = false` (safe default for now)
+    * Versioning **Enabled** ✅ (undo button for deleted/overwritten state)
+    * `force_destroy = false` (safe default)
+    * Public access blocked
   * Create a **DynamoDB table** with:
 
-    * Primary key: `LockID` (String) ✅ (do not disturb sign)
+    * Primary key: `LockID` (String) ✅ (acts as a "Do Not Disturb" sign during applies)
 
 * Ran:
 
   ```bash
-  terraform init   # local state
+  terraform init   # using local state
   terraform apply
   ```
 
@@ -68,40 +73,135 @@ Set up Terraform’s “memory” (state) to live in S3, with a DynamoDB lock to
 
 ---
 
-**📂 Phase B – Switch to Remote State**
+### **📂 Phase B – Switch to Remote State**
 
-* Added **`backend "s3"`** block in `main.tf` pointing to:
+**Goal:** Migrate Terraform to use S3 for state storage + DynamoDB for state locking.
 
-  * `bucket = "<${var.state_bucket_name}>"`
-  * `key    = "envs/dev/terraform.tfstate"`
-  * `region = "${var.aws_region}"`
-  * `dynamodb_table = "<${var.state_dynamodb_table}>"`
-* Created `backend.hcl` file with these values (because variables can’t be used inside backend).
-* Ran:
+**Steps Taken:**
+
+* In **Phase\_B** folder, created `versions.tf`:
+
+  ```hcl
+  terraform {
+    backend "s3" {}
+  }
+  ```
+
+  *(Values supplied at init time via `-backend-config`)*
+
+* Created **`backend.hcl`**:
+
+  ```hcl
+  bucket         = "tf-state-employee-directory"
+  key            = "envs/dev/terraform.tfstate"
+  region         = "eu-west-2"
+  dynamodb_table = "tf-state-locks"
+  encrypt        = true
+  ```
+
+* Ran migration:
 
   ```bash
   terraform init -backend-config=backend.hcl -reconfigure
   ```
-* Migrated local state to S3 successfully.
+
+* Confirmed state successfully moved to S3 bucket.
 
 ---
 
 ### **✅ Validation Checklist**
 
-* [ ] S3 bucket created in correct region
-* [ ] Versioning **enabled**
-* [ ] DynamoDB table has **PK: LockID (String)**
-* [ ] Terraform backend points to S3 + DynamoDB without errors
-* [ ] Lock record appears in DynamoDB during `terraform apply`
+* [x] S3 bucket created in correct region
+
+<img width="614" height="183" alt="Screenshot 2025-08-12 at 09 59 46" src="https://github.com/user-attachments/assets/4e044115-8c79-4fee-befd-ca24abf0283b" />
+
+* [x] Versioning **enabled**
+
+<img width="954" height="157" alt="Screenshot 2025-08-12 at 10 00 50" src="https://github.com/user-attachments/assets/27c1153c-21f2-43f5-8ce9-849775493749" />
+
+* [x] DynamoDB table **LockID (String)** schema 
+
+<img width="414" height="179" alt="Screenshot 2025-08-12 at 10 01 55" src="https://github.com/user-attachments/assets/e11e3565-bde7-4474-ba6f-ad52fad63f24" />
+
+* [x] Terraform applies lock when concurrent changes are attempted
+
+<img width="276" height="39" alt="Screenshot 2025-08-12 at 10 41 40" src="https://github.com/user-attachments/assets/0c319463-999e-4f0a-b5db-352b3d7b73d6" />
 
 ---
 
-### **📚 Lessons Learned**
+### **💡 Lessons Learned**
 
-* **Backend vars limitation:** Terraform doesn’t allow variables in the backend block — solved with `backend.hcl`.
-* **Bucket naming:** S3 bucket names are **global** — had to make name unique.
-* **Deletion caution:** For cleanup later, will need `force_destroy = true` or empty the bucket first.
-* **Versioning is priceless:** Already saw how it could save the state file if something goes wrong.
+1. **Backend vars can’t use `${var.*}`** — must pass via `-backend-config` or `.hcl` file.
+2. DynamoDB locking is still valid (not deprecated), but S3 alone works if you don’t need locking.
+3. Always bootstrap S3/DynamoDB with **local state** to avoid chicken-and-egg issues.
+4. Versioning in S3 is essential for recovering broken state files.
+5. `-migrate-state` cleanly moves state between local and remote without manual file copying.
+Alright — here’s the **reverse migration process** (Remote → Local) in the same style, so your executed.md for **Module 0** will have **both directions** documented.
+
+---
+
+## Bonus 🔄 Phase B → Phase A — Switching Back to Local State
+
+**Goal:** Detach Terraform from the remote backend (S3 + DynamoDB) and revert to using a **local state file**.
+This is useful for:
+
+* Testing changes without touching shared state
+* Cleaning up or deleting the S3/DynamoDB infrastructure without breaking Terraform
+
+---
+
+### **Steps Taken**
+
+1. **Removed backend block** from config in Phase\_A:
+
+   ```hcl
+   # Removed backend "s3" block so Terraform defaults to local backend
+   ```
+
+2. **Re-initialized with migration to local:**
+
+   ```bash
+   terraform init -migrate-state
+   ```
+
+   * Terraform detected the **S3 backend** was being unset.
+   * Chose `yes` when prompted to copy state from remote to local.
+
+3. **Validation:**
+
+   ```bash
+   terraform state list
+   ```
+
+   Output still showed existing resources:
+
+   ```
+   aws_dynamodb_table.terraform_locks
+   aws_s3_bucket.terraform_state
+   aws_s3_bucket_public_access_block.terraform_state
+   aws_s3_bucket_versioning.terraform_state
+   ```
+
+   ✅ Confirms state was copied locally — no dependency on remote bucket.
+
+4. **Checked S3 bucket in AWS Console** — state file was still present (important: migration does not delete the remote copy automatically).
+
+---
+
+### **✅ Validation Checklist**
+
+* [x] `terraform plan` works locally without backend errors
+* [x] Local `terraform.tfstate` file created in project directory
+* [x] Remote state file in S3 remains intact (manual deletion if needed)
+
+---
+
+### **💡 Lessons Learned**
+
+1. **Remote → Local doesn’t delete S3 state file** — clean it up manually if needed.
+2. Use `-migrate-state` when moving **from** a backend; use `-reconfigure` when changing backend settings without copying state.
+3. Keep a backup of the `.tfstate` file before migrations, just in case.
+4. You can confirm which backend is active by checking `.terraform/terraform.tfstate` metadata.
 
 ---
 
