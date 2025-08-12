@@ -10,43 +10,92 @@ It includes:
 
 ---
 
-## 🛠️ Module 0 — Local & Remote State Setup
+## 🛠️ Module 0 — Local & Remote State Setup (Terraform-First, Two-Phase)
 
-**Decisions**
+### What & Why (in plain English)
 
-* **Create S3 bucket for Terraform state**
-  *Why:* Like a shared **notebook** where Terraform writes down what it’s built. Storing it in S3 means the “notebook” isn’t stuck on your laptop — it’s accessible anywhere.
+* **Terraform needs a memory.** That “memory” is the **state file**.
+* We’ll store that memory in **S3** (safe, shareable) and prevent collisions with a **DynamoDB lock** (like a “Room in Use” sign).
+* To avoid a chicken-and-egg problem, we’ll **create the S3 bucket and DynamoDB table with Terraform using local state first**, then **switch** Terraform to use them.
 
-* **Enable versioning on the bucket**
-  *Why:* Versioning is your “**undo**” button. If the state file gets corrupted, you can roll back.
+### Two-Phase Plan
 
-* **Create DynamoDB table for state locking**
-  *Why:* This is the “**Do Not Disturb**” sign for Terraform — it prevents two people (or processes) from changing the same infrastructure at once.
+* **Phase A – Bootstrap (local state):**
+  Use Terraform to **create** the S3 bucket (with versioning) and the DynamoDB lock table. Terraform state is still local on your machine.
+* **Phase B – Migrate (remote state):**
+  Point your main Terraform project to the **S3 bucket + DynamoDB table** and **migrate state**. From now on, Terraform uses remote state.
 
-* **Name resources using project + environment**
-  *Why:* Like labelling boxes during a house move — you instantly know what’s inside.
+---
 
-**Variables**
+### Decisions
 
-* `state_bucket_name` — Name of S3 bucket for Terraform state.
-* `state_dynamodb_table` — Name of DynamoDB table for locking.
-* `aws_region` — AWS region to deploy bucket and table.
-* `tags` — Default tags for both resources.
+* **S3 bucket for state** (e.g., `tf-state-employee-directory`)
+  *Why:* Think of it as a **shared notebook** where Terraform writes what exists.
+* **Versioning enabled**
+  *Why:* It’s your **undo button** if the notebook gets corrupted.
+* **DynamoDB table for locking** (e.g., `tf-state-locks`, PK: `LockID`)
+  *Why:* A **“Do Not Disturb”** sign so two applies can’t collide.
+* **Naming uses project + env**
+  *Why:* Like labels on moving boxes — instantly recognizable.
 
-**Docs to Read (Why)**
+---
 
-* **aws\_s3\_bucket** – Create S3 bucket to store Terraform state.
-* **aws\_s3\_bucket\_versioning** – Add rollback safety.
-* **aws\_dynamodb\_table** – Create a table for Terraform locking.
-* **terraform backend s3** – Link Terraform to S3 + DynamoDB automatically.
+### Variables
 
-**AI Prompt Template**
+* `state_bucket_name` — S3 bucket for Terraform state
+* `state_dynamodb_table` — DynamoDB table for locking
+* `aws_region` — Region for both resources
+* `tags` — Default tags to apply
+
+---
+
+### Docs to Read (Why)
+
+* **`aws_s3_bucket`** – Create the state bucket (the notebook)
+* **`aws_s3_bucket_versioning`** – Turn on the undo button
+* **`aws_dynamodb_table`** – Create the lock table (the sign)
+* **`terraform backend s3`** – How Terraform uses S3 + DynamoDB for state & locks
+
+---
+
+### AI Prompt Templates
+
+**Phase A – Bootstrap resources (local state):**
 
 > Generate Terraform configuration that creates:
 >
-> 1. An S3 bucket `${var.state_bucket_name}` in `${var.aws_region}` with versioning enabled, tagged with `${var.tags}`.
+> 1. An S3 bucket `${var.state_bucket_name}` in `${var.aws_region}` with versioning enabled and public access blocked, tagged with `${var.tags}`.
 > 2. A DynamoDB table `${var.state_dynamodb_table}` with primary key `LockID` (string) for state locking, tagged with `${var.tags}`.
-> 3. Configure Terraform backend to use this S3 bucket for remote state storage and DynamoDB for locking. Use variables for names, region, and tags.
+>    Use variables for names, region, and tags. Do **not** configure a remote backend in this bootstrap — it should run with local state.
+
+**Phase B – Switch Terraform to remote state:**
+
+> Generate Terraform configuration (or init command guidance) to configure the `backend "s3"` to use:
+>
+> * `bucket = "<same as ${var.state_bucket_name}>"`
+> * `key = "envs/dev/terraform.tfstate"`
+> * `region = "${var.aws_region}"`
+> * `dynamodb_table = "<same as ${var.state_dynamodb_table}>"`
+>   Explain that variables cannot be used inside the backend block; provide a `backend.hcl` example and the `terraform init -backend-config=backend.hcl -reconfigure` command.
+
+---
+
+### Definition of Done (checklist)
+
+* [ ] **Phase A applied:** S3 bucket exists and shows **Versioning: Enabled**
+* [ ] **Phase A applied:** DynamoDB table exists with **PK: LockID (String)**
+* [ ] **Phase B migrated:** `terraform init` connects to S3 backend & DynamoDB locks
+* [ ] **State lives in S3:** State object appears at `envs/dev/terraform.tfstate`
+* [ ] **Locking works:** A `terraform apply` briefly creates a lock item in DynamoDB
+
+---
+
+### Common Pitfalls (and fixes)
+
+* **Bucket name already taken:** S3 names are global → choose a more specific name.
+* **Trying to use variables inside backend:** Not supported → use `backend.hcl` and `-backend-config`.
+* **Destroying versioned bucket later:** Empty or lifecycle-clean first, or `force_destroy` if appropriate.
+* **Wrong region mismatch:** Bucket’s region must match the backend `region` you configure.
 
 ---
 
