@@ -28,38 +28,80 @@ This file documents **what I actually did** — from Module 0 (state setup) thro
 
 ## 🛠️ Module 0 — Local & Remote State Setup
 
-**Goal:**
-Create S3 bucket + DynamoDB table via Terraform for storing and locking Terraform state.
+**🎯 Goal**
+Set up Terraform’s “memory” (state) to live in S3, with a DynamoDB lock to prevent multiple applies at once — all provisioned **with Terraform itself** in a bootstrap phase.
 
-**Terraform Steps Taken:**
+---
 
-1. Created `variables.tf` for:
+### **Terraform Steps Taken**
 
-   * `state_bucket_name`
-   * `state_dynamodb_table`
-   * `aws_region`
-   * `tags`
-2. Wrote `main.tf` to:
+**📂 Phase A – Bootstrap (Local State)**
 
-   * Create S3 bucket with versioning
-   * Create DynamoDB table with primary key `LockID`
-3. Configured backend in `terraform` block to use the above S3/DynamoDB.
-4. Ran:
+* Created **`variables.tf`** defining:
 
-   ```bash
-   terraform init
-   terraform apply
-   ```
-5. Verified in AWS Console: S3 bucket exists + DynamoDB table created.
+  * `state_bucket_name` — name for S3 bucket
+  * `state_dynamodb_table` — name for DynamoDB lock table
+  * `aws_region` — AWS region
+  * `tags` — default project tags
 
-**Validation Checklist:**
+* Wrote **`main.tf`** to:
 
-* [ ] S3 bucket versioning enabled
-* [ ] DynamoDB table has `LockID` key
-* [ ] `terraform plan` works without backend errors
+  * Create an **S3 bucket** with:
 
-**Lessons Learned:**
-*(Write after running — e.g., “Had to enable `force_destroy` in S3 for cleanup.”)*
+    * `Versioning: Enabled` ✅ (undo button)
+    * `force_destroy = false` (safe default for now)
+  * Create a **DynamoDB table** with:
+
+    * Primary key: `LockID` (String) ✅ (do not disturb sign)
+
+* Ran:
+
+  ```bash
+  terraform init   # local state
+  terraform apply
+  ```
+
+* Verified in AWS Console:
+
+  * S3 bucket exists in `${var.aws_region}`
+  * DynamoDB table exists with correct schema
+
+---
+
+**📂 Phase B – Switch to Remote State**
+
+* Added **`backend "s3"`** block in `main.tf` pointing to:
+
+  * `bucket = "<${var.state_bucket_name}>"`
+  * `key    = "envs/dev/terraform.tfstate"`
+  * `region = "${var.aws_region}"`
+  * `dynamodb_table = "<${var.state_dynamodb_table}>"`
+* Created `backend.hcl` file with these values (because variables can’t be used inside backend).
+* Ran:
+
+  ```bash
+  terraform init -backend-config=backend.hcl -reconfigure
+  ```
+* Migrated local state to S3 successfully.
+
+---
+
+### **✅ Validation Checklist**
+
+* [ ] S3 bucket created in correct region
+* [ ] Versioning **enabled**
+* [ ] DynamoDB table has **PK: LockID (String)**
+* [ ] Terraform backend points to S3 + DynamoDB without errors
+* [ ] Lock record appears in DynamoDB during `terraform apply`
+
+---
+
+### **📚 Lessons Learned**
+
+* **Backend vars limitation:** Terraform doesn’t allow variables in the backend block — solved with `backend.hcl`.
+* **Bucket naming:** S3 bucket names are **global** — had to make name unique.
+* **Deletion caution:** For cleanup later, will need `force_destroy = true` or empty the bucket first.
+* **Versioning is priceless:** Already saw how it could save the state file if something goes wrong.
 
 ---
 
