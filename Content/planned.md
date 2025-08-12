@@ -99,85 +99,75 @@ It includes:
 
 ---
 
-## 🌍 Module 1 — Global Project Setup
+## 🌍 **Module 1 — IAM Setup + Global Project Configuration**
 
-**Decisions**
+### **Decisions**
 
-* **Naming convention:** `employee-<env>-<component>`
-  *Why:* Keeps things organised — like putting labels on storage boxes.
+* **Naming convention:**
+  `employee-<env>-<component>` — keeps resources clearly grouped, like labeling storage boxes so you know exactly what’s inside.
+* **Environments:**
+  `dev` and `prod` (via Terraform workspaces or separate folders) — lets you test changes in a safe playground before touching production, like practicing on a spare car before driving your main one.
+* **Remote state:**
+  **S3 backend + DynamoDB locking** (already set up in Module 0) — prevents two people from updating the same state at once, like a “Do Not Disturb” sign for Terraform.
+* **Tagging standard:**
+  `Project`, `Environment`, `Owner`, `CostCenter` — tags are AWS’s sticky notes; they make cost tracking, searching, and cleanup easier.
 
-* **Environments:** dev, prod (via workspaces or folders)
-  *Why:* Test safely before touching production — like practising on a spare car before driving your main one.
+---
 
-* **Remote state:** S3 backend + DynamoDB locking (from Module 0)
-  *Why:* Shared, safe Terraform state.
-
-* **Tagging standard:** Project, Environment, Owner, CostCenter
-  *Why:* Tags are AWS’s sticky notes — helps with cost tracking and clean-up.
-
-**Variables**
+### **Variables**
 
 * `aws_region`
 * `project_name`
 * `environment`
 * `tags` (map)
 
-**Docs to Read (Why)**
+---
 
-* **aws provider** – Terraform needs to know which cloud/region to talk to.
-* **terraform workspaces** – Manage dev/prod in one codebase.
-* **terraform variables, outputs, locals** – Keep configs flexible and reusable.
+### **Docs to Read (Why)**
 
-**AI Prompt Template**
-
-> Generate Terraform configuration to set up the AWS provider in region `${var.aws_region}`, with default tags `${var.tags}`, and configure a remote S3 backend with DynamoDB state locking. Include variables for `project_name`, `environment`, and `aws_region`.
+* **aws provider** — Terraform needs to know which cloud/region to talk to.
+* **terraform workspaces** — Manage dev/prod from one codebase.
+* **terraform variables, outputs, locals** — Keep configs flexible and reusable.
+* **IAM best practices** — Secure AWS access.
 
 ---
 
-## 🔐 Module 2 — IAM
+### **Planned Terraform Steps**
 
-**Decisions**
+1. **Provider + Defaults**
 
-* **Users:** AdminUser, DevUser
-  *Why:* Separate accounts = better security, like separate keys for each housemate.
+   * Configure AWS provider using `${var.aws_region}`.
+   * Apply default tags from `${var.tags}` to all resources automatically.
+2. **Workspace Setup** (if using)
 
-* **Group:** EC2Admins
-  *Why:* Easier to give/revoke permissions for a team.
+   * Create and switch to `dev` workspace for testing.
+3. **IAM Configuration**
 
-* **EC2 Role:** EmployeeWebAppRole
-  *Why:* Lets EC2 talk to S3 & DynamoDB without storing credentials.
+   * Create `AdminUser` (for project administration).
+   * Create `DevUser` (for development/testing).
+   * Create `EC2Admins` group with `AmazonEC2FullAccess` policy.
+   * Attach IAM roles for future EC2 instance profiles.
+4. **Validation**
 
-* **Policies:** Start with AWS managed S3 + DynamoDB access
-  *Why:* Managed policies are pre-made “permission sets” — start simple.
+   * Log in with both users to verify credentials.
+   * Confirm AWS Console and CLI access.
 
-**Variables**
+---
 
-* `admin_user_name`
-* `dev_user_name`
-* `iam_group_name`
-* `ec2_role_name`
-* `managed_policy_arns` (list)
+### **AI Prompt Template**
 
-**Docs to Read (Why)**
-
-* **aws\_iam\_user** – Create IAM users.
-* **aws\_iam\_group** – Group users for shared permissions.
-* **aws\_iam\_role** – Create roles for services like EC2.
-* **aws\_iam\_instance\_profile** – Attach a role to an EC2 instance.
-
-**AI Prompt Template**
-
-> Generate Terraform AWS IAM configuration that creates:
+> Generate Terraform configuration that:
 >
-> * Users `${var.admin_user_name}` and `${var.dev_user_name}`
-> * Group `${var.iam_group_name}` with `${var.managed_policy_arns}` attached
-> * Role `${var.ec2_role_name}` with EC2 trust and same policies
-> * Instance profile bound to that role
->   Use variables and tagging from my global setup.
+> * Sets up the AWS provider in region `${var.aws_region}`, with default tags `${var.tags}`.
+> * Creates IAM users `AdminUser` and `DevUser` with console + programmatic access.
+> * Creates IAM group `EC2Admins` with `AmazonEC2FullAccess`.
+> * Creates IAM role `EmployeeWebAppRole` with `AmazonS3FullAccess` and `AmazonDynamoDBFullAccess`.
+> * Uses variables for `project_name`, `environment`, `aws_region`, and `tags`.
+> * Supports multiple environments via Terraform workspaces.
 
 ---
 
-## 🌐 Module 3 — EC2
+## 🌐 Module 2 — EC2
 
 **Decisions**
 
@@ -221,7 +211,7 @@ It includes:
 
 ---
 
-## 🏗️ Module 4 — VPC & Networking
+## 🏗️ Module 3 — VPC & Networking
 
 **Decisions**
 
@@ -262,7 +252,7 @@ It includes:
 
 ---
 
-## 🪣 Module 5 — S3
+## 🪣 Module 4 — S3
 
 **Decisions**
 
@@ -296,7 +286,7 @@ It includes:
 
 ---
 
-## 📄 Module 6 — DynamoDB
+## 📄 Module 5 — DynamoDB
 
 **Decisions**
 
@@ -330,7 +320,7 @@ It includes:
 
 ---
 
-## ⚖️ Module 7 — ALB + Auto Scaling
+## ⚖️ Module 6 — ALB + Auto Scaling
 
 **Decisions**
 
