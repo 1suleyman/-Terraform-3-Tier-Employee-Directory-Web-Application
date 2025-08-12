@@ -16,13 +16,12 @@ This file documents **what I actually did** — from Module 0 (state setup) thro
 ## 📋 Execution Modules
 
 * **Module 0** – Local & Remote State Setup (S3 + DynamoDB)
-* **Module 1** – Global Project Setup (Provider, Tags, Variables)
-* **Module 2** – IAM (Users, Groups, Roles, Policies)
-* **Module 3** – EC2 (Web Server Deployment)
-* **Module 4** – VPC & Networking
-* **Module 5** – S3 (Profile Photo Storage)
-* **Module 6** – DynamoDB (Employee Records)
-* **Module 7** – ALB + Auto Scaling
+* **Module 1** – IAM Setup + Global Project Configuration
+* **Module 2** – EC2 (Web Server Deployment)
+* **Module 3** – VPC & Networking
+* **Module 4** – S3 (Profile Photo Storage)
+* **Module 5** – DynamoDB (Employee Records)
+* **Module 6** – ALB + Auto Scaling
 
 ---
 
