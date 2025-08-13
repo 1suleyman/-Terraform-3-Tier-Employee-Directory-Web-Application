@@ -145,6 +145,10 @@ Once I applied a simple test resource, the file appeared in the bucket, and Dyna
   
    * Instance profile for EC2 attachment. ✅
 
+## Here's the link for the terraform files used to create this 
+
+[🌍 Module 1 — IAM Setup + Global Project Configuration/](Content/🌍Module1—IAMSetup+GlobalProjectConfiguration)
+
 ---
 
 ### 💡 Lessons Learned
