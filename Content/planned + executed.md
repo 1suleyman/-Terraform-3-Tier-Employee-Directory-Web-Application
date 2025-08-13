@@ -147,7 +147,7 @@ Once I applied a simple test resource, the file appeared in the bucket, and Dyna
 
 ## Here's the link for the terraform files used to create this 
 
-[🌍 Module 1 — IAM Setup + Global Project Configuration/](Content/🌍Module1—IAMSetup+GlobalProjectConfiguration)
+[🌍 Module 1 — IAM Setup + Global Project Configuration](Content/🌍Module1—IAMSetup+GlobalProjectConfiguration)
 
 ---
 
