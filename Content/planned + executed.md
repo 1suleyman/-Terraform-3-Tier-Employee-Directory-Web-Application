@@ -132,15 +132,18 @@ Once I applied a simple test resource, the file appeared in the bucket, and Dyna
    ```
 3. IAM Resources:
 
-   * `AdminUser` & `DevUser` with console + CLI access.
-   * Group `EC2Admins` with `AmazonEC2FullAccess`.
-   * `EmployeeWebAppRole` with trust policy for EC2 and S3/DynamoDB full access.
-   * Instance profile for EC2 attachment.
-4. Validated:
+   * `AdminUser` & `DevUser` with console + CLI access. ✅
+   * Group `EC2Admins` with `AmazonEC2FullAccess`. ✅
 
-   * AWS Console logins worked.
-   * AWS CLI S3 listing worked for both users.
-   * Role trust policy correct.
+<img width="361" height="554" alt="Screenshot 2025-08-13 at 16 32 37" src="https://github.com/user-attachments/assets/2f0c00a6-1091-4c44-98a1-ce4dab660f01" />
+
+   * `EmployeeWebAppRole` with trust policy for EC2 and S3/DynamoDB full access. ✅
+
+<img width="295" height="58" alt="Screenshot 2025-08-13 at 16 34 18" src="https://github.com/user-attachments/assets/a130312d-7963-47b0-8483-e1cbb9b8f34e" />
+
+<img width="638" height="265" alt="Screenshot 2025-08-13 at 16 34 30" src="https://github.com/user-attachments/assets/3b354303-0bb6-415e-80df-101f7f86ca44" />
+  
+   * Instance profile for EC2 attachment. ✅
 
 ---
 
