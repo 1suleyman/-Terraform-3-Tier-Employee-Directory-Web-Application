@@ -36,7 +36,7 @@ Instead of manually creating resources in the AWS Console, **Terraform manages e
 
 Quick links to the main learning artifacts in this repo:
 
-* 📘+🛠️ [Planned + Executed Steps](Content/planned + executed.md) – Terraform module breakdowns, configuration structure, and IaC design decisions + Terraform code examples, plan/apply logs, screenshots, and testing notes
+* 📘 + 🛠️ [Planned + Executed Steps](Content/planned+executed.md) – Terraform module breakdowns, configuration structure, and IaC design decisions + Terraform code examples, plan/apply logs, screenshots, and testing notes
 
 ---
 
