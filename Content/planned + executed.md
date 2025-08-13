@@ -147,7 +147,7 @@ Once I applied a simple test resource, the file appeared in the bucket, and Dyna
 
 ## Here's the link for the terraform files used to create this 
 
-[🌍 Module 1 — IAM Setup + Global Project Configuration](🌍Module1—IAMSetup+GlobalProjectConfiguration)
+[🌍 Module 1 — IAM Setup + Global Project Configuration](https://github.com/1suleyman/-Terraform-3-Tier-Employee-Directory-Web-Application/tree/main/Content/%F0%9F%8C%8D%20Module%201%20%E2%80%94%20IAM%20Setup%20%2B%20Global%20Project%20Configuration)
 
 ---
 
