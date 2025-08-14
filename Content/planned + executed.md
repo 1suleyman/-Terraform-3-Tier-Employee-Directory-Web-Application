@@ -159,10 +159,6 @@ Once I applied a simple test resource, the file appeared in the bucket, and Dyna
 
 ---
 
-Got it — here’s the cleaned-up **Module 2 — EC2 Deployment** without the SSH failed section.
-
----
-
 ## 🌐 Module 2 — EC2 Deployment
 
 ### 📌 Planned
