@@ -159,13 +159,17 @@ Once I applied a simple test resource, the file appeared in the bucket, and Dyna
 
 ---
 
+Got it — here’s the cleaned-up **Module 2 — EC2 Deployment** without the SSH failed section.
+
+---
+
 ## 🌐 Module 2 — EC2 Deployment
 
 ### 📌 Planned
 
 * Use **Amazon Linux 2023** AMI.
 * `t2.micro` instance for free-tier testing.
-* Security group allows only HTTP/HTTPS.
+* Security group allows only **HTTP/HTTPS**.
 * Attach IAM instance profile from Module 1.
 * Use `user_data` to bootstrap Flask app.
 
@@ -173,24 +177,75 @@ Once I applied a simple test resource, the file appeared in the bucket, and Dyna
 
 ### ✅ Executed
 
-* Used `data "aws_ami"` to fetch latest Amazon Linux 2023.
-* Created `aws_instance`:
+* Used `data "aws_ami" "selected"` with **presets** (`var.base_image` = `al2023` / `ubuntu_jammy` / `al2`) and filters (`architecture`, `virtualization-type`, `root-device-type`) to fetch the **latest** AMI in `var.aws_region`.
+* Provisioned `aws_instance.app` (`t2.micro`) with:
 
-  * IAM instance profile from Module 1.
-  * Security group restricted to HTTP/HTTPS.
-  * User data script from `scripts/user_data.sh`.
-* Validated:
+  * **IAM instance profile**: `aws_iam_instance_profile.ec2_profile` (from Module 1).
+  * **Security group** `aws_security_group.web_sg`: HTTP/HTTPS from anywhere.
+  * **User data** via Terraform HEREDOC (`local.user_data`) — intended to bootstrap Flask app.
+* Added helpful **outputs**: `ec2_public_ip`, `ec2_public_dns`, `app_url`, `selected_ami_id`, `selected_ami_name`.
 
-  * Instance launched without error.
-  * Flask app accessible via public IP.
-  * IAM role permissions working.
+---
+
+### ⚠ What Actually Happened
+
+1. **Subnet Link Missing**
+
+   * Forgot to explicitly link EC2 to the VPC's subnet in Terraform.
+   * Initially launched into a subnet with **no auto-assign public IPv4**.
+
+2. **No Public IP Assigned**
+
+   * Fixed by enabling **auto-assign public IPv4** in the subnet settings (via AWS Console).
+
+3. **Public IP Website Not Loading**
+
+   * Discovered **route table pointed to a deleted IGW** (status: `blackhole`).
+
+4. **User Data Script Errors**
+
+   * **Filename mismatch**: Downloaded `FlaskApp.zip` but tried to unzip `employee-app.zip`.
+   * **Unzip before install**: Attempted `unzip` before `dnf install unzip`.
+   * **Flask port issue**: Default `python3 application.py` bound to `127.0.0.1:5000`, not `0.0.0.0:80` (unreachable with SG only allowing port 80).
+   * **Public IP requirement**: Needed `associate_public_ip_address = true` in Terraform **and** a subnet route to an active IGW.
+
+5. **Confirmed Root Cause**
+
+   * Replaced Flask user data with **simple Apache test page**:
+
+     ```bash
+     #!/bin/bash
+     set -eux
+     dnf update -y
+     dnf install -y httpd
+     systemctl start httpd
+     systemctl enable httpd
+     echo "<h1>🎉 Hello from EC2!</h1>" > /var/www/html/index.html
+     ```
+   * Result: Static site loaded instantly → proved **user\_data script** was the issue.
+
+<img width="532" height="208" alt="Screenshot 2025-08-14 at 16 58 19" src="https://github.com/user-attachments/assets/96564d55-18de-431f-913d-ac278500fe8b" />
+
+---
+
+### 🔎 Validation
+
+* `terraform plan` resolved correct AMI and SG rules.
+* After fixing subnet + IGW + minimal `user_data`, instance launched and was reachable at `http://<public-ip>`.
+* Verified IAM role permissions (Module 1 config intact).
 
 ---
 
 ### 💡 Lessons Learned
 
-* Always test `user_data` locally before deploying — syntax errors break automation.
-* Instance profiles are the secure way to give EC2 AWS access — avoid hardcoding keys.
+* **Don’t hardcode AMI IDs** — always fetch dynamically with filters.
+* **Always link EC2 to a subnet** that has:
+
+  * Auto-assign public IPv4 enabled, **and**
+  * Route to a valid Internet Gateway.
+* Keep **user\_data minimal** for testing (Apache/HTML) before running complex scripts.
+* Set `user_data_replace_on_change = true` to trigger re-provisioning on script updates.
+* Debug route tables early — **blackhole = no internet**.
 
 ---
 
