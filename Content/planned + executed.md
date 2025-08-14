@@ -233,6 +233,7 @@ Once I applied a simple test resource, the file appeared in the bucket, and Dyna
 ## Here's the link for the terraform files (that have added changes) used to create this 
 
 [🚀 Module 2: Launching the App on EC2](https://github.com/1suleyman/-Terraform-3-Tier-Employee-Directory-Web-Application/tree/main/Content/%F0%9F%9A%80%20Module%202%3A%20Launching%20the%20App%20on%20EC2)
+
 ---
 
 ### 💡 Lessons Learned
