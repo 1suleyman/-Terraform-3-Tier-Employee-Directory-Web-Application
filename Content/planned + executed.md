@@ -254,7 +254,7 @@ Once I applied a simple test resource, the file appeared in the bucket, and Dyna
 ### 📌 Planned
 
 * **CIDR**: `10.1.0.0/16`
-* 2 AZs for HA.
+* 2 AZs for High Availability.
 * Public and private subnets.
 * Internet Gateway & public route table.
 
@@ -263,8 +263,22 @@ Once I applied a simple test resource, the file appeared in the bucket, and Dyna
 ### ✅ Executed
 
 * Created VPC, subnets, IGW, and route tables.
+
+<img width="241" height="197" alt="Screenshot 2025-08-15 at 15 40 48" src="https://github.com/user-attachments/assets/68912d48-0b77-48d2-8e3b-44f999f6dd4b" />
+
+<img width="304" height="312" alt="Screenshot 2025-08-15 at 15 41 25" src="https://github.com/user-attachments/assets/601f4a1c-d692-467c-8ff7-fe56f50aa3e2" />
+
+<img width="314" height="145" alt="Screenshot 2025-08-15 at 15 41 40" src="https://github.com/user-attachments/assets/626a25cf-c82f-49e2-9ec5-563ac6a7235b" />
+
+<img width="291" height="240" alt="Screenshot 2025-08-15 at 15 42 09" src="https://github.com/user-attachments/assets/e4f8a40b-7cc9-4f73-8779-eb774a1d2795" />
+
 * Associated public subnets with public route table.
-* Validated public subnet had internet connectivity.
+
+<img width="567" height="173" alt="Screenshot 2025-08-15 at 15 43 15" src="https://github.com/user-attachments/assets/d869560b-09ba-4d00-ad58-20934656234b" />
+
+* Validated that public subnets had internet connectivity — tested with a website, and connection worked ✅.
+
+<img width="562" height="286" alt="Screenshot 2025-08-15 at 15 39 02" src="https://github.com/user-attachments/assets/b3888732-886d-4c5f-90b4-34678cca8b3f" />
 
 ---
 
