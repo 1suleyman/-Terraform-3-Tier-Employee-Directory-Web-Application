@@ -1,21 +1,20 @@
 # 🧑‍💻 Terraform 3-Tier Employee Directory Web Application
 
-Welcome to my personal **Terraform lab project**!
-This repository documents my **step-by-step journey** building a **3-Tier Employee Directory Web Application** on AWS — this time **fully provisioned with Infrastructure as Code (IaC) using Terraform**.
+Welcome to my personal Terraform lab project! This repository documents my step-by-step journey building a **3-Tier Employee Directory Web Application on AWS** — this time fully provisioned with **Infrastructure as Code (IaC)** using Terraform.
 
 ---
 
 ## 📌 Project Overview
 
-The goal of this project is to gain **hands-on experience** designing, provisioning, and scaling a **production-style web application** using Terraform to automate AWS infrastructure builds.
+The goal of this project is to gain **hands-on experience designing, provisioning, and scaling** a production-style web application using Terraform to automate AWS infrastructure builds.
 
-Instead of manually creating resources in the AWS Console, **Terraform manages everything** — from VPC networking to EC2 instances, S3 storage, and DynamoDB tables.
+Instead of manually creating resources in the AWS Console, Terraform manages everything — from **VPC networking** to **EC2 instances**, **S3 storage**, and **DynamoDB tables**.
 
 ---
 
 ## 🎯 Objective
 
-**Build a secure, scalable, and highly available Employee Directory web application** in AWS — with every resource defined in Terraform `.tf` configuration files for repeatable, version-controlled deployments.
+Build a **secure, scalable, and highly available** Employee Directory web application in AWS — with every resource defined in Terraform `.tf` configuration files for **repeatable, version-controlled deployments**.
 
 ---
 
@@ -28,13 +27,13 @@ Instead of manually creating resources in the AWS Console, **Terraform manages e
 * **Amazon VPC** – Custom networking and subnet design
 * **Elastic Load Balancer** – Distributes traffic across AZs
 * **EC2 Auto Scaling** – Automatic instance scaling based on load
-* **\[Planned] API Gateway + AWS Lambda** – Serverless contact form feature
+* \[Planned] **API Gateway + AWS Lambda** – Serverless contact form feature
 
 ---
 
 ## 🗂️ Project Documentation
 
-Quick links to the main learning artifacts in this repo:
+This repo combines **plan + execution** logs into one source of truth. Each module is a mini case study: **the plan, the pivot, the execution, and what I learned**.
 
 * 📘🛠️ [Planned + Executed Steps](Content/planned+executed.md) – Terraform module breakdowns, configuration structure, and IaC design decisions + Terraform code examples, plan/apply logs, screenshots, and testing notes
 
@@ -46,75 +45,78 @@ Quick links to the main learning artifacts in this repo:
 
 ---
 
+### 🌱 Module 0 — Manual Bootstrap for Remote State
+
+* **S3 bucket** (`tf-state-employee-directory`) with versioning for `.tfstate`
+* **DynamoDB table** (`tf-state-locks`) for state locking
+* Backend configured in `backend.hcl` and verified with `terraform init`
+
+💡 Lessons: Always enable versioning, backend must exist before init, DynamoDB locking prevents race conditions.
+
+---
+
+### 🌍 Module 1 — IAM Setup + Global Project Configuration
+
+* Created IAM users (AdminUser, DevUser), group (EC2Admins), and role (EmployeeWebAppRole).
+* Applied **provider-level tags** and **workspaces** for `dev` and `prod`.
+* Created instance profile for EC2.
+
+💡 Lessons: Workspaces allow fast environment switching, tagging at provider level reduces repetition.
+
+---
+
+### 🚀 Module 2 — EC2 Deployment
+
+* Selected latest Amazon Linux 2023 AMI dynamically with `data "aws_ami"`.
+* Created EC2 instance (`t2.micro`) with IAM role, SG (HTTP/HTTPS only), and User Data.
+* **Issues hit**: missing subnet links, blackholed route tables, public IP not auto-assigned, and User Data failures.
+* Debugged by switching to a **minimal Apache test page** → proved networking was fine.
+
+💡 Lessons: Test with simple user\_data first, always confirm subnet routing to IGW, set `associate_public_ip_address = true`.
+
+---
+
+### 🏗️ Module 3 — VPC & Networking
+
+* Created custom VPC (`10.1.0.0/16`), public/private subnets in 2 AZs.
+* Added Internet Gateway + route tables, validated connectivity with EC2 test.
+
+💡 Lessons: Tag subnets as `public`/`private`, always test connectivity early.
+
+---
+
+### 💾 Module 4 — Storage (S3 Integration) \[In Progress]
+
+* Created S3 bucket `employee-photo-bucket-456s` in `eu-west-2`.
+* Applied bucket policy to allow access from EC2 via IAM Role.
+* Updated User Data to set `PHOTOS_BUCKET` env variable.
+* Ran into **Flask app bootstrap issues** with Skill Builder script (ordering, yum vs dnf, binding to port 80).
+
+⚠️ **Where I Paused**: Troubleshooting this became a rabbit hole. Sometimes the best move is to pause and pivot — I decided to continue with other modules and revisit this later with a cleaner approach.
+
+---
+
 ## 🧠 What I Learned
 
-This project documents my **end-to-end AWS deployment** of a real-world, scalable web application — **built entirely with Terraform**.
-
-Here’s what I practiced and learned:
-
-### ✅ **Terraform Core Concepts**
-
-* Structured `.tf` files into logical modules (`networking`, `compute`, `storage`, etc.)
-* Used `terraform init`, `plan`, `apply`, and `destroy` for full lifecycle management
-* Applied **variables**, **outputs**, and **locals** to make configurations reusable
-* Implemented **remote state** with an S3 backend and DynamoDB state locking
-* Tagged all resources for better cost tracking and compliance
-
-### ✅ **Identity & Access Management (IAM)**
-
-* Defined IAM users, groups, and roles **in code**
-* Attached least-privilege policies to roles for EC2 access to S3 & DynamoDB
-* Managed environment-specific roles using **Terraform workspaces**
-
-### ✅ **Networking (Amazon VPC)**
-
-* Created a **custom VPC** (CIDR: 10.1.0.0/16) with Terraform
-* Automated creation of public/private subnets across multiple AZs
-* Attached and routed through an Internet Gateway for public access
-* Configured security groups with only the necessary inbound/outbound rules
-
-### ✅ **Compute (Amazon EC2)**
-
-* Used Terraform to launch EC2 instances from Amazon Linux 2023 AMIs
-* Passed in User Data scripts to install Flask and dependencies
-* Assigned IAM roles and security groups via Terraform
-* Managed instance counts dynamically via Auto Scaling groups
-
-### ✅ **Storage (Amazon S3)**
-
-* Created an S3 bucket for photo uploads
-* Applied **bucket policies** and IAM role permissions in code
-* Tested end-to-end uploads from app → S3
-
-### ✅ **Database (Amazon DynamoDB)**
-
-* Created the `Employees` table with partition key `id`
-* Integrated environment variables for app connectivity
-* Verified full-stack flow: Upload to S3, write to DynamoDB, return data to UI
-
-### ✅ **Load Balancing & Auto Scaling**
-
-* Defined **Application Load Balancer** and target groups in Terraform
-* Linked Auto Scaling groups to ALB target tracking
-* Simulated high CPU load to trigger scaling events
-* Verified healthy instance registration and traffic routing
+✅ **Terraform Core Concepts** – modules, variables, outputs, remote state, tagging.
+✅ **IAM** – users, roles, instance profiles, least-privilege policies.
+✅ **Networking** – custom VPC, subnets, IGW, security groups.
+✅ **Compute** – EC2 provisioning, User Data debugging, AMI selection.
+✅ **Storage** – S3 buckets, bucket policies, IAM integration.
+✅ **Resilience** – validated that not every step goes perfectly; documenting pivots is part of real DevOps work.
 
 ---
 
 ## 🧩 Why Terraform?
 
-Instead of manually creating resources:
-
-* Every AWS service is **declared in code**
-* Changes are **tracked in Git**
-* Infrastructure can be **destroyed and rebuilt in minutes**
-* **Identical environments** can be created for dev, test, and prod using workspaces
-
-This approach matches **real-world DevOps workflows** and prepares for **Terraform Associate** exam concepts.
+* Every AWS service is declared in code.
+* Changes are tracked in Git.
+* Environments (`dev`, `prod`) are reproducible via workspaces.
+* Infra can be destroyed and rebuilt in minutes.
+* Mirrors real-world **DevOps workflows** and maps directly to Terraform Associate exam concepts.
 
 ---
 
 ## 📮 Feedback
 
-Have ideas, questions, or want to collaborate on **Terraform + AWS** projects?
-Feel free to reach out or open an issue in the repo 🚀
+Have ideas, questions, or want to collaborate on Terraform + AWS projects? Feel free to reach out or open an issue in the repo 🚀
