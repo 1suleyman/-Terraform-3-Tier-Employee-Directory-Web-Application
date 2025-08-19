@@ -39,12 +39,6 @@ This repo combines **plan + execution** logs into one source of truth. Each modu
 
 ---
 
-## 📊 Architecture Diagram
-
-![Screenshot 2025-07-08 at 10 41 47](https://github.com/user-attachments/assets/0e6db769-0053-41a3-a6cf-d135515adbff)
-
----
-
 ### 🌱 Module 0 — Manual Bootstrap for Remote State
 
 * **S3 bucket** (`tf-state-employee-directory`) with versioning for `.tfstate`
@@ -114,6 +108,12 @@ This repo combines **plan + execution** logs into one source of truth. Each modu
 * Environments (`dev`, `prod`) are reproducible via workspaces.
 * Infra can be destroyed and rebuilt in minutes.
 * Mirrors real-world **DevOps workflows** and maps directly to Terraform Associate exam concepts.
+
+---
+
+## 📊 Architecture Diagram
+
+![Screenshot 2025-07-08 at 10 41 47](https://github.com/user-attachments/assets/0e6db769-0053-41a3-a6cf-d135515adbff)
 
 ---
 
