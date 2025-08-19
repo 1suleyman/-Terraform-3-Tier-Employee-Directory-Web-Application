@@ -282,10 +282,6 @@ Once I applied a simple test resource, the file appeared in the bucket, and Dyna
 
 ---
 
-Here’s a clean summary you can use for your project log:
-
----
-
 ## ⚠️ Where I Stopped
 
 This is where I paused the project — I ran into an issue with the **user data script** from the AWS Skill Builder video.
@@ -317,3 +313,5 @@ But in Terraform, this approach caused problems:
 After spending time troubleshooting, I realized this was a bigger rabbit hole. Sometimes you have to know when to **pause and move forward**, especially when **time is essential** and there are other skills to build.
 
 I’ll return to this with a fresh approach later — for now, I decided to stop here and continue with other parts of the learning journey.
+
+
