@@ -282,89 +282,38 @@ Once I applied a simple test resource, the file appeared in the bucket, and Dyna
 
 ---
 
-### 💡 Lessons Learned
-
-* Tag subnets as `public`/`private` for clarity.
-* Always test connectivity with a temporary EC2 in the public subnet.
+Here’s a clean summary you can use for your project log:
 
 ---
 
-## 🪣 Module 4 — S3 (Profile Photos)
+### ⚠️ Where I Stopped
 
-### 📌 Planned
+This is where I paused the project — I ran into an issue with the **user data script** from the AWS Skill Builder video.
 
-* Unique bucket name for profile photo storage.
-* Public access blocked.
-* Policy allows only EC2 role to access.
+I tried to use the following script in Terraform:
 
----
+```bash
+#!/bin/bash -ex 
+wget https://aws-tc-largeobjects.s3-us-west-2.amazonaws.com/DEV-AWS-MO-GCNv2/FlaskApp.zip 
+unzip FlaskApp.zip 
+cd FlaskApp/ 
+yum -y install python3 
+yum -y install python3-pip 
+pip install -r requirements.txt 
+yum -y install stress 
+export PHOTOS_BUCKET=employee-photo-bucket-456s
+export AWS_DEFAULT_REGION=eu-west-2
+export DYNAMO_MODE=on 
+FLASK_APP=application.py /usr/local/bin/flask run --host=0.0.0.0 --port=80
+```
 
-### ✅ Executed
+But in Terraform, this approach caused problems:
 
-* Created S3 bucket with public access blocked.
-* Added bucket policy restricting access to `EmployeeWebAppRole`.
-* Validated EC2 could upload and retrieve images.
+* **Mismatch with Amazon Linux 2023** → The script assumes `yum` but AL2023 uses `dnf`.
+* **Flask startup issue** → Running `application.py` directly didn’t bind to port `80`.
+* **Ordering issues** → Called `unzip` before ensuring it was installed.
+* **Hardcoded values** → Region and bucket weren’t dynamic from Terraform variables.
 
----
+After spending time troubleshooting, I realized this was a bigger rabbit hole. Sometimes you have to know when to **pause and move forward**, especially when **time is essential** and there are other skills to build.
 
-### 💡 Lessons Learned
-
-* Use bucket policy **and** IAM role for layered security.
-* Always test both upload and download flows.
-
----
-
-## 📄 Module 5 — DynamoDB (Employee Records)
-
-### 📌 Planned
-
-* Table name: `Employees`
-* Partition key: `id` (String)
-* Billing mode: On-demand.
-
----
-
-### ✅ Executed
-
-* Created table with `id` as PK.
-* Attached policy to EC2 role for CRUD access.
-* Validated app could read/write to the table.
-
----
-
-### 💡 Lessons Learned
-
-* PAY\_PER\_REQUEST billing avoids unused capacity costs.
-* Keep key schema simple unless advanced queries are required.
-
----
-
-## ⚖️ Module 6 — ALB + Auto Scaling
-
-### 📌 Planned
-
-* Internet-facing ALB in public subnets.
-* Target group on HTTP `/`.
-* Launch template for EC2.
-* ASG: min=2, max=4, desired=2.
-* CPU target policy: 60%.
-
----
-
-### ✅ Executed
-
-* Created ALB across public subnets.
-* Created target group & attached EC2 instances.
-* Launch template for app instances.
-* Auto Scaling Group with CPU tracking.
-* Validated:
-
-  * ALB evenly distributed traffic.
-  * Scaling triggered under CPU load.
-
----
-
-### 💡 Lessons Learned
-
-* Test scaling with `stress` tool to verify thresholds.
-* Health checks must match app’s response path — mismatches cause false failures.
+I’ll return to this with a fresh approach later — for now, I decided to stop here and continue with other parts of the learning journey.
