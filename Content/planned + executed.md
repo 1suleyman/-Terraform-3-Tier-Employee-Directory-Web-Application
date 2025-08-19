@@ -286,7 +286,7 @@ Here’s a clean summary you can use for your project log:
 
 ---
 
-### ⚠️ Where I Stopped
+## ⚠️ Where I Stopped
 
 This is where I paused the project — I ran into an issue with the **user data script** from the AWS Skill Builder video.
 
