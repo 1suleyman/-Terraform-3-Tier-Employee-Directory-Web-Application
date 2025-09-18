@@ -6,6 +6,8 @@ Welcome to my personal Terraform lab project! This repository documents my step-
 
 ## 📌 Project Overview
 
+![Screenshot 2025-07-08 at 10 41 47](https://github.com/user-attachments/assets/0e6db769-0053-41a3-a6cf-d135515adbff)
+
 The goal of this project is to gain **hands-on experience designing, provisioning, and scaling** a production-style web application using Terraform to automate AWS infrastructure builds.
 
 Instead of manually creating resources in the AWS Console, Terraform manages everything — from **VPC networking** to **EC2 instances**, **S3 storage**, and **DynamoDB tables**.
@@ -108,12 +110,6 @@ This repo combines **plan + execution** logs into one source of truth. Each modu
 * Environments (`dev`, `prod`) are reproducible via workspaces.
 * Infra can be destroyed and rebuilt in minutes.
 * Mirrors real-world **DevOps workflows** and maps directly to Terraform Associate exam concepts.
-
----
-
-## 📊 Architecture Diagram
-
-![Screenshot 2025-07-08 at 10 41 47](https://github.com/user-attachments/assets/0e6db769-0053-41a3-a6cf-d135515adbff)
 
 ---
 
